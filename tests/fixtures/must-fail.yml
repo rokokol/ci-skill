@@ -1,0 +1,9 @@
+# A known-bad workflow: jobs must be a mapping and steps need uses/run. check-templates.sh
+# runs actionlint on this and demands a failure, proving the workflow lint actually bites
+name: broken
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: a step with nothing to do

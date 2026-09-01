@@ -1,0 +1,25 @@
+name: detector
+
+# The reusable half of a badge-bearing detector: one target per call. The thin wrappers
+# (detector-<target>.yml) exist because a GitHub status badge is per workflow file —
+# this is how the README gets one badge per target without the job living twice
+on:
+  workflow_call:
+    inputs:
+      target:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      # >>> EXAMPLE: the world-facing check, parameterized by target — a container-image
+      # install test, a live-site probe, a mirror fetch
+      - run: echo "detector for ${{ inputs.target }} here"
+      # <<<

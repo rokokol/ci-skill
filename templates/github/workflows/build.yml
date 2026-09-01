@@ -1,0 +1,62 @@
+name: build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+  # Automation (the bump cascade, drift bots) verifies branches by calling this workflow
+  # against a ref — the real checks, never a copy of their commands that drifts apart
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: VERSION matches CHANGELOG
+        run: |
+          ver=$(cat VERSION)
+          grep -qF "## [$ver]" CHANGELOG.md || {
+            echo "VERSION says $ver but CHANGELOG.md has no ## [$ver] heading" >&2
+            exit 1
+          }
+
+      # >>> EXAMPLE: the repo's own build and test commands, tools taken from the
+      # repo's lockfile (nix develop -c ... / npm ci / cargo --locked)
+      - run: echo "build and test here"
+      # <<<
+
+  # A fast, separately-named status — lint answers in seconds next to a long build
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      # Unpinned registry lookups make a job change behavior with zero change in the
+      # repo; tools come from the lockfile, and this step keeps it that way. Tune the
+      # pattern list to the repo's ecosystem
+      - name: CI tools come from the lock, not the registry
+        run: |
+          if grep -rEn 'nix (run|shell) nixpkgs#' .github/workflows; then
+            echo "unpinned registry lookup in a workflow — pin the tool via the repo's lockfile" >&2
+            exit 1
+          fi
+      # >>> EXAMPLE: run the build system's own lint check — the file list lives there,
+      # not here (one source of truth per list)
+      - run: echo "lint here"
+      # <<<

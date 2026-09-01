@@ -1,0 +1,23 @@
+# Thin wrapper over detector.yml so this target gets its own status badge — a badge is
+# per workflow file. Copy per target; wrappers differ only in name and input.
+#
+# Deliberately NOT on pull_request: this job's failure indicts the world (a mirror, a
+# :latest image, a live site), not the change under review — it runs on push, weekly
+# (the drift detector), and by hand, and its badge is the verdict of the last such run
+name: target
+
+on:
+  push:
+    branches: [master]
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  detector:
+    uses: ./.github/workflows/detector.yml
+    with:
+      target: target
