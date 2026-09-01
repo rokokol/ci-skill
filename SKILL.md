@@ -8,7 +8,7 @@ license: MIT
 
 CI earns its keep only while a green run means something. Everything here serves that one property: a check that cannot fail proves nothing, a job that fails without a code change teaches nothing, and a badge nobody trusts might as well not render. The references carry the reasoning; `templates/` carries copyable GitHub Actions files with `EXAMPLE` markers for the repo-specific parts.
 
-Born from the [huix-standard](https://github.com/rokokol/huix-standard) family rollout, where every rule below was paid for by a real red run; this skill is the provider-general half — nothing here assumes Nix or any language, though the examples lean on GitHub Actions.
+Born from the [huix-standard](https://github.com/rokokol/huix-standard-skill) family rollout, where every rule below was paid for by a real red run; this skill is the provider-general half — nothing here assumes Nix or any language, though the examples lean on GitHub Actions.
 
 ## The rules
 

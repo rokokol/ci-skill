@@ -7,13 +7,13 @@
 ![GitHub Actions](https://img.shields.io/badge/GitHub-Actions-2088FF?logo=githubactions&logoColor=white)
 ![Nix flake](https://img.shields.io/badge/Nix-flake-7EBAE4?logo=nixos&logoColor=white)
 [![license](https://img.shields.io/badge/code-MIT-3DA639)](LICENSE)
-[![ci](https://github.com/rokokol/ci-standard/actions/workflows/ci.yml/badge.svg)](https://github.com/rokokol/ci-standard/actions/workflows/ci.yml)
+[![ci](https://github.com/rokokol/ci-standard-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/rokokol/ci-standard-skill/actions/workflows/ci.yml)
 
 </div>
 
 A [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code) that standardizes how CI is written: what may gate a pull request and what runs as a weekly drift detector, why every tool a job runs comes from the repo's lockfile, how dependency bumps land themselves on green, how a README gets one honest badge per statement, and why a check that has never been red proves nothing.
 
-Extracted from [huix-standard](https://github.com/rokokol/huix-standard), where every rule was paid for by a real red run; this is the provider-general half — nothing here assumes Nix or any language, though the templates are GitHub Actions.
+Extracted from [huix-standard](https://github.com/rokokol/huix-standard-skill), where every rule was paid for by a real red run; this is the provider-general half — nothing here assumes Nix or any language, though the templates are GitHub Actions.
 
 ## Contents
 
@@ -25,7 +25,7 @@ Extracted from [huix-standard](https://github.com/rokokol/huix-standard), where 
 ## Use as a skill
 
 ```sh
-git clone https://github.com/rokokol/ci-standard ~/Projects/ci-standard
+git clone https://github.com/rokokol/ci-standard-skill ~/Projects/ci-standard
 ln -s ~/Projects/ci-standard ~/.claude/skills/ci-standard
 ```
 
