@@ -38,11 +38,13 @@ Then ask Claude Code to write or review CI — [SKILL.md](SKILL.md) carries the 
 - [The build workflow is callable](references/workflows.md): `workflow_call` + `ref`, so bots verify branches with the real checks instead of a drifting copy.
 - [Bumps land themselves on green](references/bump-cascade.md): weekly bump→verify→land, red leaves the dated branch standing for a human.
 - [Checks are falsifiable](references/checks.md): red first, self-tested checkers, whole-line assertions, one source of truth per list, and a VERSION↔CHANGELOG gate.
+- [An operational harness](references/ops.md): `ci.sh` for status, watch-until-verdict, failed-step logs without the runner's teardown noise, dispatch-and-follow and rerun.
 
 ## Tests
 
 ```sh
 nix develop -c ./check-templates.sh
+./ci.sh status            # and the harness itself: the badge row in a terminal
 ```
 
 Runs actionlint over every template, then feeds it the known-bad fixture from `tests/fixtures/` — the run fails unless the fixture does.

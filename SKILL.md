@@ -21,11 +21,16 @@ Born from the [huix-standard](https://github.com/rokokol/huix-standard) family r
 - **One source of truth per list.** File lists for linters, version numbers, tool sets — each lives in exactly one place the others read (the lint list in the build system's own check, the version in a `VERSION` file CI cross-checks against the changelog). Duplicated lists drift; drifted lists lie. See [references/checks.md](references/checks.md).
 - **Least privilege, bounded time.** `permissions: contents: read` at the top of every workflow, widened per job only where a job writes; `timeout-minutes` on anything that talks to the network; `concurrency` groups on anything that pushes.
 
+## The harness
+
+[`ci.sh`](ci.sh) beside this file is the operational half — status, watch-until-verdict, failed-step logs with the runner's teardown noise stripped, dispatch-and-follow, rerun. Use it instead of hand-rolling `gh run` invocations; [references/ops.md](references/ops.md) documents it and the raw `gh --json/--jq` recipes it is built from.
+
 ## Layout
 
 ```
 SKILL.md             this file — the rules
-references/          one spec per piece: workflows, pinning, badges, bump-cascade, checks
+ci.sh                the harness: status / runs / watch / failed / dispatch / rerun
+references/          one spec per piece: workflows, pinning, badges, bump-cascade, checks, ops
 templates/           copyable GitHub Actions files, EXAMPLE markers for repo specifics
 check-templates.sh   actionlint over the templates, self-tested against known-bad fixtures
 tests/fixtures/      the known-bad inputs the lint must fail on

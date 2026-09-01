@@ -13,9 +13,9 @@ fail() {
   exit 1
 }
 
-echo "== this script lints itself"
-shellcheck check-templates.sh
-shfmt -d -i 2 -ci check-templates.sh
+echo "== the scripts lint themselves"
+shellcheck check-templates.sh ci.sh
+shfmt -d -i 2 -ci check-templates.sh ci.sh
 
 echo "== workflow templates pass actionlint"
 work=$(mktemp -d)
