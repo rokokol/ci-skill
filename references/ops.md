@@ -55,3 +55,7 @@ for r in repo-a repo-b; do gh run list -R owner/$r --limit 5 \
 ```
 
 Two habits: always take `--json ... --jq` over scraping the table output (the table reorders and truncates), and read a run id once with `runs` rather than re-listing per command.
+
+## When local and CI disagree, suspect the observer
+
+A check that fails on your machine and passes on the runner (or the reverse) is not automatically a flake — before touching the check, account for what differs about *where you are watching from*. The usual suspects are your network: a VPN or corporate proxy that a container's own bridge quietly bypasses, a CDN that geo-blocks your exit but not the runner's, a local mirror or DNS that resolves differently. Reproduce the network the check actually needs (`--network host` for a container that must share your routing, or the plain interface when it must not) before concluding the check is wrong. CI runners, boring and unproxied, are the tiebreaker: when they disagree with you, the anomaly is usually on your side.
