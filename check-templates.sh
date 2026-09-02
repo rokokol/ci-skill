@@ -14,8 +14,8 @@ fail() {
 }
 
 echo "== the scripts lint themselves, templates included"
-shellcheck check-templates.sh ci.sh templates/no-secrets.sh
-shfmt -d -i 2 -ci check-templates.sh ci.sh templates/no-secrets.sh
+shellcheck check-templates.sh ci.sh templates/no-secrets.sh tests/fixtures/planted-secrets.sh
+shfmt -d -i 2 -ci check-templates.sh ci.sh templates/no-secrets.sh tests/fixtures/planted-secrets.sh
 pyflakes templates/falsify.py
 
 echo "== workflow templates pass actionlint"
@@ -47,6 +47,43 @@ grep -qE "$pattern" tests/fixtures/unpinned-workflow.yml ||
 if grep -qE "$pattern" templates/github/workflows/build.yml; then
   fail "the pin guard's pattern matches the template carrying it — break the self-match, see references/pinning.md"
 fi
+
+echo "== the secret gate catches every shape it claims, and is quiet on itself"
+# The template is exercised end to end, in a throwaway repository, rather than by
+# re-testing its regexes here: the gate's subject is "what git tracks", and only a
+# real repository can answer that
+sec=$(mktemp -d)
+git -C "$sec" init -q
+git -C "$sec" config user.email ci@example.invalid
+git -C "$sec" config user.name ci
+mkdir -p "$sec/tests"
+cp templates/no-secrets.sh "$sec/tests/"
+git -C "$sec" add -A
+# Clean first. The gate is now scanning its own source, so every pattern that
+# matched its own text would surface right here
+if ! (cd "$sec" && ./tests/no-secrets.sh >/dev/null 2>&1); then
+  (cd "$sec" && ./tests/no-secrets.sh) || true
+  rm -rf "$sec"
+  fail "the secret gate reddens on its own source — a pattern is matching its own text"
+fi
+# Then one planted value per shape, each on its own tracked file, so a single
+# over-broad pattern cannot cover for a dead one
+i=0
+while IFS= read -r line; do
+  i=$((i + 1))
+  printf '%s\n' "$line" >"$sec/planted-$i.txt"
+  git -C "$sec" add -A
+  if (cd "$sec" && ./tests/no-secrets.sh >/dev/null 2>&1); then
+    printf 'the gate stayed green on: %s\n' "${line:0:24}…" >&2
+    rm -rf "$sec"
+    fail "a planted secret shape went unnoticed — see tests/fixtures/planted-secrets.sh"
+  fi
+  rm -f "$sec/planted-$i.txt"
+  git -C "$sec" add -A
+done < <(./tests/fixtures/planted-secrets.sh)
+[ "$i" -gt 0 ] || fail "planted-secrets.sh produced nothing to plant"
+echo "   $i shapes planted, $i caught"
+rm -rf "$sec"
 
 echo
 echo "check-templates: everything holds"

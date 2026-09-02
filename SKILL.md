@@ -33,5 +33,5 @@ ci.sh                the harness: status / runs / watch / failed / dispatch / re
 references/          one spec per piece: workflows, pinning, badges, bump-cascade, checks, ops
 templates/           copyable workflows plus falsify.py and no-secrets.sh, EXAMPLE markers for repo specifics
 check-templates.sh   actionlint over the templates, self-tested against known-bad fixtures
-tests/fixtures/      the known-bad inputs the lint must fail on
+tests/fixtures/      the known-bad inputs every check here is proven to catch
 ```
