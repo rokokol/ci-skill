@@ -13,9 +13,10 @@ fail() {
   exit 1
 }
 
-echo "== the scripts lint themselves"
-shellcheck check-templates.sh ci.sh
-shfmt -d -i 2 -ci check-templates.sh ci.sh
+echo "== the scripts lint themselves, templates included"
+shellcheck check-templates.sh ci.sh templates/no-secrets.sh
+shfmt -d -i 2 -ci check-templates.sh ci.sh templates/no-secrets.sh
+pyflakes templates/falsify.py
 
 echo "== workflow templates pass actionlint"
 work=$(mktemp -d)
@@ -34,10 +35,18 @@ if (cd "$bad" && actionlint .github/workflows/*.yml >/dev/null 2>&1); then
 fi
 rm -rf "$bad"
 
-echo "== VERSION matches CHANGELOG (the standard, applied to itself)"
-ver=$(cat VERSION)
-grep -qF "## [$ver]" CHANGELOG.md ||
-  fail "VERSION says $ver but CHANGELOG.md has no ## [$ver] heading"
+echo "== the pin guard is able to fail, and does not fail on itself"
+# One source of truth: the pattern is read out of the template that carries it, never
+# spelled a second time here — two copies of a regex disagree within a month
+pattern=$(sed -n "s/.*grep -rEn '\(.*\)' \.github\/workflows.*/\1/p" templates/github/workflows/build.yml)
+[ -n "$pattern" ] || fail "could not read the pin guard's pattern out of the build.yml template"
+grep -qE "$pattern" tests/fixtures/unpinned-workflow.yml ||
+  fail "the pin guard's pattern matches nothing in tests/fixtures/unpinned-workflow.yml — it cannot catch anything"
+# The guard greps the workflows including the file that carries it, so a literal
+# sub-pattern would redden the repo on itself — see references/pinning.md
+if grep -qE "$pattern" templates/github/workflows/build.yml; then
+  fail "the pin guard's pattern matches the template carrying it — break the self-match, see references/pinning.md"
+fi
 
 echo
 echo "check-templates: everything holds"

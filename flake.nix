@@ -22,6 +22,7 @@
             actionlint
             shellcheck
             shfmt
+            python3Packages.pyflakes
           ];
         };
       });

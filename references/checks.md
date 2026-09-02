@@ -11,6 +11,31 @@ A check that has never been red is a decoration: nobody knows whether it guards 
 - **Un-mute before diagnosing.** When one platform fails where the rest pass, the first move is removing the `2>/dev/null` from the pipeline in question — an older tool rejecting newer syntax vanishes into muted stderr and presents as "empty output".
 - **Probe the mechanism, never a proxy.** A feature-detection check must measure the thing the code actually depends on. Asking `wc -m` whether a locale works, when `bash` does the counting downstream, held until Ubuntu swapped coreutils implementations and the proxy started answering for a locale bash never got.
 
+## Two checkers worth copying
+
+Both live in [`templates/`](../templates/) as skeletons, and both carry the same warning in their header: **copying one proves nothing**. The mechanism is reusable; the knowledge is not, and the property that makes either worth running is local — the copy must have been falsified in its own repository.
+
+### `falsify.py` — the suite, measured
+
+A test suite tells you the code passes. It does not tell you the suite would notice if the code stopped working, and that is the question worth asking of a green run. The harness answers it mechanically: for each entry in a `DEFECTS` list, replace exactly one line of the implementation with a broken version, rerun the suite, and report `SURVIVED` when it still passes — naming, in operator's terms, the behaviour nobody checks.
+
+The parts that make it trustworthy rather than decorative:
+
+- **The edit is undone in a `finally`, from memory rather than from git** — an interrupted run cannot leave a mutated working tree, and it does not need a clean checkout to be safe to run.
+- **`find` must match exactly once.** Zero or many is reported as `stale`, not guessed at: that is how the defect list tells you it has drifted away from the code it describes.
+- **A red suite before any edit aborts with a distinct exit code.** Falsification measures the distance between green and red; starting red, there is no distance and every `caught` would be meaningless.
+- **Neuter, don't break.** `if False:`, a dropped filter, a widened comparison. A suite that fails on a `SyntaxError` has noticed the syntax, not the behaviour.
+
+The `DEFECTS` list is the repository's own knowledge and never travels with the template. Write one entry per guard as the guard is written, and it doubles as prose documentation of what each guard is *for*.
+
+### `no-secrets.sh` — the gate at the tracked-file boundary
+
+`.gitignore` keeps a file out; this keeps a value out of a file that belongs in the repo. Both are needed, and the leak that matters is usually the second: a real token pasted into a config default, a doc or a test fixture. It greps **tracked files only** (`git ls-files`, `-I` so a byte sequence inside an image is not a finding), one branch per shape so the message names what was found, and it exits 0 with `nothing tracked yet` on an empty repository rather than reading as a pass by accident.
+
+Universal shapes — private key headers, provider token prefixes, a secret-shaped key assigned a real value — belong in every copy. The allow-list that keeps documented examples legal (`replace-me`, `example`, `CHANGEME`) is also the first line to re-read when a real leak is reported clean. Everything else is per-repo: a service's session cookie, whole paths that must never be tracked at all.
+
+Falsify it by planting one value of each shape it claims to catch and watching it go red on every one. The skill's own gate found real bugs that way, which a clean run never would have.
+
 ## One source of truth per list
 
 Every list CI consults lives in exactly one place; everything else reads it or is checked against it:
@@ -29,4 +54,6 @@ Every list CI consults lives in exactly one place; everything else reads it or i
   ```
 
   The release ritual bumps `VERSION` in the same commit that moves the changelog section, so the check can only pass when both moved together.
+
+  This rule is for shipped artifacts — a thing someone installs at a particular version and reports bugs against. A repository that is only ever read at whatever revision is checked out — a skill, a prompt library, a docs-only repo — has no version to be wrong about, so it carries no `VERSION` file and no gate; its changelog is dated instead of numbered. This skill is one of those, which is why `check-templates.sh` does not run the step on itself.
 - **Hand-written mirrors are allowed, drift-checked.** Shell completions, documented command tables, README flag lists may be spelled by hand for quality — provided a check diffs them against the source of truth and fails on divergence, in both directions.
