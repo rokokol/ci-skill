@@ -1,20 +1,24 @@
 # Changelog
 
-Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered — a skill is read at whatever revision you have checked out, so there is no version to bump
+Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The reasoning is in [references/checks.md](references/checks.md), which owns the rule about what has no version
 
-## Unreleased
+## 2026-09-05
 
 ### Removed
 
 - `templates/falsify.py`, and the account of falsification in `references/checks.md`. Asking whether a *test suite* would notice the code breaking is the [tests](https://github.com/rokokol/tests-skill) skill's subject, and its `t.sh falsify` does the same job across languages rather than only in Python — build and test as separate phases, so an edit the compiler rejects is reported `unusable` instead of being credited to the suite. What stays here is one link: two accounts of one thing disagree within a month. The flake's toolbox loses `pyflakes` with it
 
-### Changed
+### Added
 
-- the skill is `ci` and its repository `ci-skill`, following the family's `<name>` / `<name>-skill` split
+- the rule that a versionless repository's changelog carries no `Unreleased` section either, and why: that heading holds work that has landed but not shipped, a state such a repository cannot be in
 
-### Removed
+## 2026-09-04
 
-- the `VERSION` file and the self-applied VERSION↔CHANGELOG step: a skill is read at whatever revision is checked out, so it has no version to be wrong about — checks.md now says which repos the gate is for, and this changelog is dated rather than numbered
+### Added
+
+- `templates/check-skill.sh`, the gate a skill repository needs, taken from one where each of its checks had to catch something real. A skill fails in ways no test in the repository it documents would notice: malformed frontmatter and the agent never loads the file at all, a reference nothing links to rots unread while looking maintained, a moved heading leaves a link that resolves to nothing for a reader who is not there to complain. Each half is then made to fail on purpose in a throwaway copy
+
+## 2026-09-02
 
 ### Added
 
@@ -26,8 +30,21 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ### Changed
 
+- the skill is `ci` and its repository `ci-skill`, following the family's `<name>` / `<name>-skill` split
 - the pin guard now covers `npx`, `pip install` and `go install …@latest` beside the nix lookups, in self-match-safe form (`pip +install `, `npx +[a-z@.-]`) — the template and pinning.md had drifted apart, and the reference's own example was the unsafe spelling
 - the flake's toolbox gained pyflakes, and check-templates lints both checker templates
+
+### Removed
+
+- the `VERSION` file and the self-applied VERSION↔CHANGELOG step: a skill is read at whatever revision is checked out, so it has no version to be wrong about — checks.md now says which repos the gate is for, and this changelog is dated rather than numbered
+
+## 2026-09-01
+
+### Added
+
+- `ci.sh`, the operational harness: status, runs, watch, failed, dispatch, rerun
+
+### Changed
 
 - bump-cascade reference: what to do when the bot lands a bump under you — rebase, re-verify on the fresh lock, never force-push over it; and ops reference: when local and CI disagree, suspect the observer's network (a container bridge bypassing a VPN, a geo-blocking CDN) before the check
 - workflows reference: "the runner is not a target environment" — a job exercising the install/deploy path supplies its own pinned dependencies, and a preflight refusing the runner is working as designed; plus "anything that can wait for input gets a timeout", after a provider-selection menu rejected a script's `y` and hung until the platform killed it
