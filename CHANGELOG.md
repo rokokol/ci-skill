@@ -6,11 +6,12 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ### Removed
 
+- the version-and-changelog rules, to the [versioning](https://github.com/rokokol/versioning-skill) skill, which owns that question whole: where a version lives, which repositories have one at all, what a changelog looks like in either case, what earns an entry, and how a release is cut. This skill had grown a presentation topic inside a section about lists, which is both the wrong home and impossible to find. What stays here is the CI fact — the check is a gate on pull requests for repos that ship a version — plus a pointer in the build template, spelled inline because a workflow cannot assume another repository is checked out
 - `templates/falsify.py`, and the account of falsification in `references/checks.md`. Asking whether a *test suite* would notice the code breaking is the [tests](https://github.com/rokokol/tests-skill) skill's subject, and its `t.sh falsify` does the same job across languages rather than only in Python — build and test as separate phases, so an edit the compiler rejects is reported `unusable` instead of being credited to the suite. What stays here is one link: two accounts of one thing disagree within a month. The flake's toolbox loses `pyflakes` with it
 
 ### Added
 
-- the rule that a versionless repository's changelog carries no `Unreleased` section either, and why: that heading holds work that has landed but not shipped, a state such a repository cannot be in
+- the rule that a versionless repository's changelog carries no `Unreleased` section either — written here first, then moved to the versioning skill along with the rest of the topic the same day
 
 ## 2026-09-04
 

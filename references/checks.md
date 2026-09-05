@@ -34,21 +34,5 @@ Falsify it by planting one value of each shape and watching it go red on every o
 Every list CI consults lives in exactly one place; everything else reads it or is checked against it:
 
 - **Lint file lists** live in the build system's own check (a flake check, a make target, a package.json script); the CI job *runs that check* instead of repeating the command with its own copy of the list. Two hand-maintained lists of "files we lint" will disagree within a month.
-- **The version** lives in one machine-readable file (`VERSION`); the package metadata reads it, the tools print it, and CI cross-checks the one place it cannot read from — the changelog:
-
-  ```yaml
-  - name: VERSION matches CHANGELOG
-    run: |
-      ver=$(cat VERSION)
-      grep -qF "## [$ver]" CHANGELOG.md || {
-        echo "VERSION says $ver but CHANGELOG.md has no ## [$ver] heading" >&2
-        exit 1
-      }
-  ```
-
-  The release ritual bumps `VERSION` in the same commit that moves the changelog section, so the check can only pass when both moved together.
-
-  This rule is for shipped artifacts — a thing someone installs at a particular version and reports bugs against. A repository that is only ever read at whatever revision is checked out — a skill, a prompt library, a docs-only repo — has no version to be wrong about, so it carries no `VERSION` file and no gate; its changelog is dated instead of numbered. This skill is one of those, which is why `check-templates.sh` does not run the step on itself.
-
-  **And such a changelog has no `## Unreleased` section.** That heading exists to hold work that has happened but has not shipped, which is a state a versionless repository cannot be in: whatever is on the default branch is what everyone reading the repo already has, from the moment it is pushed. An `Unreleased` section there never closes, so it grows into an undated pile that answers "when did this change?" with nothing. Head the sections with the date the work landed — `## 2026-09-05` — and put a change under the date it was pushed. Where several changes land on one day they share the heading, which is exactly right: the day is the unit of release.
+- **The version** lives in one machine-readable file, and CI cross-checks it against the one place it cannot read from — the changelog. Which repositories have a version at all, where it lives, what the changelog looks like in either case and how a release is cut belong to the [versioning](https://github.com/rokokol/versioning-skill) skill, and are not restated here; its `check-changelog.sh` takes any changelog and is what a job runs. What stays a CI fact: this is a gate on pull requests for repos that ship a version, and this skill is not one of them, which is why `check-templates.sh` does not run it on itself.
 - **Hand-written mirrors are allowed, drift-checked.** Shell completions, documented command tables, README flag lists may be spelled by hand for quality — provided a check diffs them against the source of truth and fails on divergence, in both directions.

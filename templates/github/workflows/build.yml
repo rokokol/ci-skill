@@ -26,6 +26,10 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
+      # Delete this step in a repository that has no version — see the versioning skill,
+      # https://github.com/rokokol/versioning-skill, which owns that question and ships a
+      # check-changelog.sh doing this and more. Spelled inline here because a workflow
+      # cannot assume that skill is checked out anywhere.
       - name: VERSION matches CHANGELOG
         run: |
           ver=$(cat VERSION)
