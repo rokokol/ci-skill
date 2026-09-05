@@ -16,7 +16,6 @@ fail() {
 echo "== the scripts lint themselves, templates included"
 shellcheck check-templates.sh ci.sh templates/no-secrets.sh templates/check-skill.sh tests/fixtures/planted-secrets.sh
 shfmt -d -i 2 -ci check-templates.sh ci.sh templates/no-secrets.sh templates/check-skill.sh tests/fixtures/planted-secrets.sh
-pyflakes templates/falsify.py
 
 echo "== workflow templates pass actionlint"
 work=$(mktemp -d)

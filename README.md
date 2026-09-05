@@ -55,7 +55,7 @@ Then ask Claude Code to write or review CI, or reach for it by name. [SKILL.md](
 | **[The build workflow is callable](references/workflows.md)** | `workflow_call` with a `ref` input, so bots verify a branch by running *the real workflow* instead of a copy of its commands that drifts away from it |
 | **[Bumps land themselves, on green](references/bump-cascade.md)** | A weekly bump→verify→land cascade: bump onto a dated branch, verify by calling the build workflow against it, fast-forward and delete only on green — red leaves the branch standing for a human |
 | **[One badge per statement](references/badges.md)** | A status badge is per workflow *file*, so anything deserving its own badge gets a thin wrapper delegating to one reusable job. The wrappers differ by name and input; the logic lives once |
-| **[Every check is proven able to fail](references/checks.md)** | A new check runs red first — against the pre-fix state or a deliberately broken fixture. Checkers ship self-tests against known-bad inputs, and assertions on generated text match whole lines, not substrings |
+| **[Every check is proven able to fail](references/checks.md)** | A new check runs red first — against the pre-fix state or a deliberately broken fixture. Checkers ship self-tests against known-bad inputs, and assertions on generated text match whole lines, not substrings. The same question about a *test suite* belongs to the [tests](https://github.com/rokokol/tests-skill) skill |
 | **[One source of truth per list](references/checks.md)** | Lint file lists, tool sets, version numbers — each lives in exactly one place the others read. Duplicated lists drift, and drifted lists lie |
 | **Least privilege, bounded time** | `permissions: contents: read` at every workflow's top, widened per job only where a job writes; `timeout-minutes` on anything that talks to the network or can wait for input; `concurrency` on anything that pushes |
 
@@ -84,14 +84,16 @@ github/workflows/
   bump-cascade.yml     weekly bump -> verify by calling build.yml -> land on green
   detector.yml         the reusable world-facing job
   detector-target.yml  the thin wrapper that gives that job its own badge
-falsify.py             break one line of the implementation at a time, require the suite to notice
 no-secrets.sh          refuse to ship a value that slipped past .gitignore
+check-skill.sh         the gate a skill repository needs, each half proven able to fail
 ```
 
-`EXAMPLE` markers sit on everything repo-specific — the pin patterns of your ecosystem, the bump command, what the detector probes, the defect list, the secret shapes only your repo can leak
+`EXAMPLE` markers sit on everything repo-specific — the pin patterns of your ecosystem, the bump command, what the detector probes, the secret shapes only your repo can leak
 
 > [!IMPORTANT]
 > Copying either checker proves nothing. The mechanism travels, the knowledge does not — a copy is worth running only once it has been falsified **in its own repository**: break what it watches, see red, put it back
+
+Asking the same question of a *test suite* — would it notice if the code broke — is the [tests](https://github.com/rokokol/tests-skill) skill's subject, and its `t.sh falsify` lives there
 
 ## Tests
 
@@ -107,7 +109,7 @@ Lints the scripts and both checker templates, runs actionlint over every workflo
 SKILL.md             the rules an agent reads
 ci.sh                the harness: status / runs / watch / failed / dispatch / rerun
 references/          one spec per rule: workflows, pinning, badges, bump-cascade, checks, ops
-templates/           copyable workflows, falsify.py and no-secrets.sh, EXAMPLE markers
+templates/           copyable workflows, no-secrets.sh and check-skill.sh, EXAMPLE markers
 check-templates.sh   the self-testing template lint
 tests/fixtures/      the known-bad inputs the checks must fail on
 ```

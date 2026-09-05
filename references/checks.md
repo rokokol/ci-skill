@@ -11,22 +11,13 @@ A check that has never been red is a decoration: nobody knows whether it guards 
 - **Un-mute before diagnosing.** When one platform fails where the rest pass, the first move is removing the `2>/dev/null` from the pipeline in question — an older tool rejecting newer syntax vanishes into muted stderr and presents as "empty output".
 - **Probe the mechanism, never a proxy.** A feature-detection check must measure the thing the code actually depends on. Asking `wc -m` whether a locale works, when `bash` does the counting downstream, held until Ubuntu swapped coreutils implementations and the proxy started answering for a locale bash never got.
 
-## Two checkers worth copying
+## Falsifying a test suite
 
-Both live in [`templates/`](../templates/) as skeletons, and both carry the same warning in their header: **copying one proves nothing**. The mechanism is reusable; the knowledge is not, and the property that makes either worth running is local — the copy must have been falsified in its own repository.
+Asking whether a suite would notice the code breaking — and the harness that answers it by breaking guards on purpose — belongs to the [tests](https://github.com/rokokol/tests-skill) skill, and lives there in full. Nothing about it is repeated here, because two accounts of one thing disagree within a month.
 
-### `falsify.py` — the suite, measured
+## A checker worth copying
 
-A test suite tells you the code passes. It does not tell you the suite would notice if the code stopped working, and that is the question worth asking of a green run. The harness answers it mechanically: for each entry in a `DEFECTS` list, replace exactly one line of the implementation with a broken version, rerun the suite, and report `SURVIVED` when it still passes — naming, in operator's terms, the behaviour nobody checks.
-
-The parts that make it trustworthy rather than decorative:
-
-- **The edit is undone in a `finally`, from memory rather than from git** — an interrupted run cannot leave a mutated working tree, and it does not need a clean checkout to be safe to run.
-- **`find` must match exactly once.** Zero or many is reported as `stale`, not guessed at: that is how the defect list tells you it has drifted away from the code it describes.
-- **A red suite before any edit aborts with a distinct exit code.** Falsification measures the distance between green and red; starting red, there is no distance and every `caught` would be meaningless.
-- **Neuter, don't break.** `if False:`, a dropped filter, a widened comparison. A suite that fails on a `SyntaxError` has noticed the syntax, not the behaviour.
-
-The `DEFECTS` list is the repository's own knowledge and never travels with the template. Write one entry per guard as the guard is written, and it doubles as prose documentation of what each guard is *for*.
+`no-secrets.sh` lives in [`templates/`](../templates/) as a skeleton, and carries the warning in its header: **copying it proves nothing**. The mechanism is reusable; the knowledge is not, and the property that makes it worth running is local — the copy must have been falsified in its own repository.
 
 ### `no-secrets.sh` — the gate at the tracked-file boundary
 

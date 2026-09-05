@@ -4,6 +4,10 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ## Unreleased
 
+### Removed
+
+- `templates/falsify.py`, and the account of falsification in `references/checks.md`. Asking whether a *test suite* would notice the code breaking is the [tests](https://github.com/rokokol/tests-skill) skill's subject, and its `t.sh falsify` does the same job across languages rather than only in Python — build and test as separate phases, so an edit the compiler rejects is reported `unusable` instead of being credited to the suite. What stays here is one link: two accounts of one thing disagree within a month. The flake's toolbox loses `pyflakes` with it
+
 ### Changed
 
 - the skill is `ci` and its repository `ci-skill`, following the family's `<name>` / `<name>-skill` split
