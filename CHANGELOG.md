@@ -4,6 +4,10 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ## 2026-09-07
 
+### Added
+
+- the rule that a push is not done until its runs conclude: run the gate locally with the workflow's own command first, push, `ci.sh watch` to a verdict, report the verdict rather than the push, and on red `ci.sh failed` and a fix — with `ci.sh rerun` reserved for an external cause that has been named. The harness had the commands and ops.md called `watch` "the after-push command", but nothing said that a push without it is unfinished; ops.md now carries the ritual in full
+
 ### Changed
 
 - the skill's description names the moments it was missing: checking CI rather than only writing or reviewing it, pushing to a repository that has CI and following the runs afterwards, and asking whether a run passed or why it went red — with the Russian phrasings beside the English ones. A skill is loaded by its description, and one that only mentions writing CI is not reached for when the question is whether the last push went green

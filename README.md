@@ -58,6 +58,7 @@ Then ask Claude Code to write, review or check CI, push to a repository that has
 | **[Every check is proven able to fail](references/checks.md)** | A new check runs red first — against the pre-fix state or a deliberately broken fixture. Checkers ship self-tests against known-bad inputs, and assertions on generated text match whole lines, not substrings. The same question about a *test suite* belongs to the [tests](https://github.com/rokokol/tests-skill) skill |
 | **[One source of truth per list](references/checks.md)** | Lint file lists, tool sets, version numbers — each lives in exactly one place the others read. Duplicated lists drift, and drifted lists lie. Where the version lives, and what a changelog looks like with or without one, belongs to the [versioning](https://github.com/rokokol/versioning-skill) skill |
 | **Least privilege, bounded time** | `permissions: contents: read` at every workflow's top, widened per job only where a job writes; `timeout-minutes` on anything that talks to the network or can wait for input; `concurrency` on anything that pushes |
+| **[A push is not done until its runs conclude](references/ops.md)** | Run the gate locally with the workflow's own command first, push, then `ci.sh watch` to a verdict — and report the verdict, not the push. Red means `ci.sh failed` and a fix; a rerun is for an external cause that has been named |
 
 ## The harness
 
