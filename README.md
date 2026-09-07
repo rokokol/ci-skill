@@ -44,7 +44,7 @@ git clone https://github.com/rokokol/ci-skill ~/.claude/skills/ci
 > [!NOTE]
 > A skill has no version to pin — it is read at whatever revision you have checked out, so `git pull` is the whole upgrade path and the changelog is dated rather than numbered
 
-Then ask Claude Code to write or review CI, or reach for it by name. [SKILL.md](SKILL.md) carries the rules, `references/` the reasoning behind each, `templates/` the copyable workflow files with `EXAMPLE` markers where a repo has to fill in its own
+Then ask Claude Code to write, review or check CI, push to a repository that has it, or reach for it by name. [SKILL.md](SKILL.md) carries the rules, `references/` the reasoning behind each, `templates/` the copyable workflow files with `EXAMPLE` markers where a repo has to fill in its own
 
 ## The rules
 
