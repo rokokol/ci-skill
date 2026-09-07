@@ -34,6 +34,13 @@ mapfile -t tracked < <(git ls-files)
   exit 0
 }
 
+# --no-index makes check-ignore inspect tracked paths too; without it, Git skips
+# the exact git add -f leak this gate must catch. NUL delimiters preserve every path
+mapfile -d '' ignored < <(git ls-files -z | git check-ignore --no-index -z --stdin || true)
+for path in "${ignored[@]}"; do
+  report "tracked path is covered by .gitignore: $path"
+done
+
 scan() { # scan DESCRIPTION ERE
   if git grep -nIE "$2" -- "${tracked[@]}" >&2; then
     report "$1"

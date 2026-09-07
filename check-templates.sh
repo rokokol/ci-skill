@@ -56,13 +56,31 @@ git -C "$sec" config user.name ci
 mkdir -p "$sec/tests"
 cp templates/no-secrets.sh "$sec/tests/"
 git -C "$sec" add -A
-# Clean first. The gate is now scanning its own source, so every pattern that
-# matched its own text would surface right here
+# Clean first, with no .gitignore. The gate is now scanning its own source, so every
+# pattern that matched its own text would surface right here too
 if ! (cd "$sec" && ./tests/no-secrets.sh >/dev/null 2>&1); then
   (cd "$sec" && ./tests/no-secrets.sh) || true
   rm -rf "$sec"
-  fail "the secret gate reddens on its own source — a pattern is matching its own text"
+  fail "the secret gate reddens with no .gitignore or a pattern matches its own source"
 fi
+# An ignored path forced into the index must be named and rejected. check-ignore needs
+# --no-index for this: without it, Git deliberately skips tracked paths
+mkdir -p "$sec/user"
+printf 'user/\n' >"$sec/.gitignore"
+printf 'private preference\n' >"$sec/user/preferences.md"
+git -C "$sec" add .gitignore
+git -C "$sec" add -f user/preferences.md
+if out=$(cd "$sec" && ./tests/no-secrets.sh 2>&1); then
+  rm -rf "$sec"
+  fail "the secret gate accepts a tracked path covered by .gitignore"
+fi
+if ! printf '%s\n' "$out" | grep -qxF "secret-gate: tracked path is covered by .gitignore: user/preferences.md"; then
+  printf '%s\n' "$out" >&2
+  rm -rf "$sec"
+  fail "the secret gate rejects an ignored tracked path without naming it"
+fi
+rm -f "$sec/.gitignore" "$sec/user/preferences.md"
+git -C "$sec" add -A
 # Then one planted value per shape, each on its own tracked file, and the gate must
 # name that shape: a value caught only by some other, over-broad pattern means the
 # pattern meant for it is dead

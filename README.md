@@ -85,12 +85,12 @@ github/workflows/
   bump-cascade.yml     weekly bump -> verify by calling build.yml -> land on green
   detector.yml         the reusable world-facing job
   detector-target.yml  the thin wrapper that gives that job its own badge
-no-secrets.sh          refuse to ship a value that slipped past .gitignore
+no-secrets.sh          refuse ignored paths and secret values at the tracked-file boundary
 check-pins.sh          the pin guard: no tool from a registry, proven per shape on every run
 check-skill.sh         the gate a skill repository needs, falsifying itself on every run
 ```
 
-`EXAMPLE` markers sit on everything repo-specific — the bump command, what the detector probes, the secret shapes only your repo can leak. The other two checkers have no such part and are copied verbatim. `check-pins.sh` greps the workflows for every unpinned-lookup shape (`nix run nixpkgs#`, `npx`, `pip install`, `pipx`, `uvx`, `go install @latest`, `cargo install` without `--locked`, `curl | sh`, an action at `@main`) and, before scanning, plants each shape alone in a throwaway workflow and requires a finding that quotes it, then every pinned spelling together and requires quiet. `check-skill.sh -n <skill-name>` checks that SKILL.md loads at all, that every file under `references/` is reached from SKILL.md by a chain of links, and that every relative link and heading anchor resolves, then plants each of those defects in a throwaway copy and requires itself to go red on each
+`no-secrets.sh` rejects tracked paths matched by `.gitignore`, including paths admitted with `git add -f`, before scanning tracked contents for secret shapes; `.gitignore` itself remains ordinary repository content. `EXAMPLE` markers sit on everything repo-specific — the bump command, what the detector probes, the secret shapes only your repo can leak. The other two checkers have no such part and are copied verbatim. `check-pins.sh` greps the workflows for every unpinned-lookup shape (`nix run nixpkgs#`, `npx`, `pip install`, `pipx`, `uvx`, `go install @latest`, `cargo install` without `--locked`, `curl | sh`, an action at `@main`) and, before scanning, plants each shape alone in a throwaway workflow and requires a finding that quotes it, then every pinned spelling together and requires quiet. `check-skill.sh -n <skill-name>` checks that SKILL.md loads at all, that every file under `references/` is reached from SKILL.md by a chain of links, and that every relative link and heading anchor resolves, then plants each of those defects in a throwaway copy and requires itself to go red on each
 
 > [!IMPORTANT]
 > Copying the secret gate proves nothing. The mechanism travels, the knowledge does not — a copy is worth running only once it has been falsified **in its own repository**: break what it watches, see red, put it back
@@ -103,7 +103,7 @@ Asking the same question of a *test suite* — would it notice if the code broke
 nix develop -c ./check-templates.sh
 ```
 
-Lints the scripts and all three checker templates, runs actionlint over every workflow template, runs `check-skill.sh` on this repository's own docs and `check-pins.sh` on its workflows and the workflow templates, then proves each check can fail. actionlint must reject the known-bad workflow in `tests/fixtures/`. The pin guard plants its fourteen shapes and six pinned spellings itself. The secret gate is exercised end to end in a throwaway repository: clean while scanning only its own source, then red on each of the 31 planted key shapes in turn, naming that shape and not another. And the skill gate plants nine defects in copies of this repository and requires itself to go red on each. Every one of those halves was watched failing before it was trusted
+Lints the scripts and all three checker templates, runs actionlint over every workflow template, runs `check-skill.sh` on this repository's own docs and `check-pins.sh` on its workflows and the workflow templates, then proves each check can fail. actionlint must reject the known-bad workflow in `tests/fixtures/`. The pin guard plants its fourteen shapes and six pinned spellings itself. The secret gate is exercised end to end in a throwaway repository: clean while scanning only its own source, red on `user/preferences.md` covered by `.gitignore` and admitted with `git add -f`, then red on each of the 31 planted key shapes in turn, naming every finding. And the skill gate plants nine defects in copies of this repository and requires itself to go red on each. Every one of those halves was watched failing before it was trusted
 
 ## Layout
 
