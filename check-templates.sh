@@ -34,6 +34,11 @@ if (cd "$bad" && actionlint .github/workflows/*.yml >/dev/null 2>&1); then
 fi
 rm -rf "$bad"
 
+echo "== this repository passes the skill gate it hands out"
+# check-skill.sh proves its own checks able to fail on every run, so running it here is
+# both the gate on this skill's docs and the falsification of the template
+templates/check-skill.sh -n ci .
+
 echo "== the pin guard is able to fail, and does not fail on itself"
 # One source of truth: the pattern is read out of the template that carries it, never
 # spelled a second time here — two copies of a regex disagree within a month

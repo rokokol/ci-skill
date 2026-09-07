@@ -85,13 +85,13 @@ github/workflows/
   detector.yml         the reusable world-facing job
   detector-target.yml  the thin wrapper that gives that job its own badge
 no-secrets.sh          refuse to ship a value that slipped past .gitignore
-check-skill.sh         the gate a skill repository needs, each half proven able to fail
+check-skill.sh         the gate a skill repository needs, falsifying itself on every run
 ```
 
-`EXAMPLE` markers sit on everything repo-specific — the pin patterns of your ecosystem, the bump command, what the detector probes, the secret shapes only your repo can leak
+`EXAMPLE` markers sit on everything repo-specific — the pin patterns of your ecosystem, the bump command, what the detector probes, the secret shapes only your repo can leak. `check-skill.sh` has no such part: copy it verbatim and call it from the repo's own gate as `check-skill.sh -n <skill-name>` — it checks that SKILL.md loads at all, that every file under `references/` is reached from SKILL.md by a chain of links, and that every relative link and heading anchor resolves, then plants each of those defects in a throwaway copy and requires itself to go red on each
 
 > [!IMPORTANT]
-> Copying either checker proves nothing. The mechanism travels, the knowledge does not — a copy is worth running only once it has been falsified **in its own repository**: break what it watches, see red, put it back
+> Copying the secret gate proves nothing. The mechanism travels, the knowledge does not — a copy is worth running only once it has been falsified **in its own repository**: break what it watches, see red, put it back
 
 Asking the same question of a *test suite* — would it notice if the code broke — is the [tests](https://github.com/rokokol/tests-skill) skill's subject, and its `t.sh falsify` lives there
 
@@ -101,7 +101,7 @@ Asking the same question of a *test suite* — would it notice if the code broke
 nix develop -c ./check-templates.sh
 ```
 
-Lints the scripts and both checker templates, runs actionlint over every workflow template, then proves each check can fail. actionlint must reject the known-bad workflow in `tests/fixtures/`. The pin guard's pattern — read *out of* the build template rather than spelled a second time — must match `tests/fixtures/unpinned-workflow.yml` and must **not** match the template carrying it. And the secret gate is exercised end to end in a throwaway repository: clean while scanning only its own source, then red on each of the 31 planted key shapes in turn. Every one of those halves was watched failing before it was trusted
+Lints the scripts and both checker templates, runs actionlint over every workflow template, runs `check-skill.sh` on this repository's own docs, then proves each check can fail. actionlint must reject the known-bad workflow in `tests/fixtures/`. The pin guard's pattern — read *out of* the build template rather than spelled a second time — must match `tests/fixtures/unpinned-workflow.yml` and must **not** match the template carrying it. The secret gate is exercised end to end in a throwaway repository: clean while scanning only its own source, then red on each of the 31 planted key shapes in turn. And the skill gate plants nine defects in copies of this repository and requires itself to go red on each. Every one of those halves was watched failing before it was trusted
 
 ## Layout
 

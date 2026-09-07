@@ -2,6 +2,13 @@
 
 Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The reasoning is in [references/checks.md](references/checks.md), which owns the rule about what has no version
 
+## 2026-09-07
+
+### Changed
+
+- `templates/check-skill.sh` is one self-contained gate rather than a skeleton, and is now actually runnable: the previous version called a `tests/check-links.sh` and a `broken-links.md` fixture that were never shipped, so a copy died on its first run — and nothing here caught that, because the template was linted but never executed. The new file takes the repository as an argument (`check-skill.sh [-n NAME] [DIR]`), so it is copied verbatim and called from a repo's own gate, and it needs bash 3.2 and POSIX tools only. Its reachability check is now a real walk: only a link counts, not a mention of a basename in prose; reachability is transitive from SKILL.md through the references, and README.md and CHANGELOG.md are not hops, since an agent does not load them. Its frontmatter check now enforces what the loader enforces — a name of lowercase letters, digits and single hyphens up to 64 characters, a description up to 1024 characters counted as characters, a closed frontmatter block. Its anchor check slugs headings the way GitHub does, Unicode dashes and quotes dropped and duplicates suffixed, and ignores links inside code fences and code spans. And it falsifies itself on every run: nine planted defects, each required to go red for its own reason, plus two controls
+- `check-templates.sh` runs the skill gate on this repository's own docs, which is at once the gate on them and the proof that the template works
+
 ## 2026-09-05
 
 ### Removed

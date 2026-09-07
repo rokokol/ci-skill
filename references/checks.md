@@ -15,9 +15,9 @@ A check that has never been red is a decoration: nobody knows whether it guards 
 
 Asking whether a suite would notice the code breaking — and the harness that answers it by breaking guards on purpose — belongs to the [tests](https://github.com/rokokol/tests-skill) skill, and lives there in full. Nothing about it is repeated here, because two accounts of one thing disagree within a month.
 
-## A checker worth copying
+## Two checkers worth copying
 
-`no-secrets.sh` lives in [`templates/`](../templates/) as a skeleton, and carries the warning in its header: **copying it proves nothing**. The mechanism is reusable; the knowledge is not, and the property that makes it worth running is local — the copy must have been falsified in its own repository.
+Both live in [`templates/`](../templates/). `no-secrets.sh` is a skeleton, and carries the warning in its header: **copying it proves nothing**. The mechanism is reusable; the knowledge is not, and the property that makes it worth running is local — the copy must have been falsified in its own repository. `check-skill.sh` has no local knowledge to add, so it is copied verbatim — and it falsifies itself on every run, which is the only way a file that travels alone can stay proven.
 
 ### `no-secrets.sh` — the gate at the tracked-file boundary
 
@@ -28,6 +28,17 @@ Most of it is universal and belongs in every copy: PEM private key headers whate
 **Every pattern must be unable to match its own source line.** The gate greps the tracked files, and its own file is one of them: a literal prefix followed by a bracket expression is safe (`sk-ant-` then `[A-Za-z0-9_-]{80,}` cannot match the text `[A-Za-z0-9_-]{80,}`), a bare literal is not. Keep that property when adding a shape, or the gate reddens the repository on the very commit that introduces it.
 
 Falsify it by planting one value of each shape and watching it go red on every one. This skill does that in `check-templates.sh`: a throwaway git repository, the template copied in and tracked, first a clean run — which is also the self-match test, since the gate is now scanning its own source — then one generated value per shape, each on its own tracked file so a single over-broad pattern cannot cover for a dead one. The planted bodies are generated rather than committed: a literal key-shaped string in a fixture is a real finding for every scanner that reads the repository, and a fixture that cannot be pushed is not a fixture.
+
+### `check-skill.sh` — the gate a skill repository needs
+
+A skill fails in ways no test in the repository it documents would notice. Malformed frontmatter, a name with an underscore or a capital, a description past the loader's limit — and the agent never loads the file at all, silently. A reference nothing links to is never read, so it rots while looking maintained. A moved heading leaves a link that resolves to nothing for a reader who is not there to complain. The gate asks all three of one repository, `check-skill.sh [-n NAME] [DIR]`, and exits on the first finding with a message that names it.
+
+- **SKILL.md loads.** The frontmatter opens the file and is closed; `name`, `description` and `license` are present and non-empty; the name is lowercase letters, digits and single hyphens, at most 64 characters, and equals `-n NAME` — what the readme and the install symlink call the skill — when given; the description is at most 1024 *characters*, counted by dropping UTF-8 continuation bytes rather than trusting the locale, so a Cyrillic trigger word counts once.
+- **Every reference is reached.** A walk from SKILL.md follows relative links transitively — SKILL.md may delegate to a reference that links on — and every file under `references/` must be in the reached set. Only a link counts, not a mention of the file's name in prose, and only a link from SKILL.md or a reference: README.md and CHANGELOG.md are for people, so a reference the readme alone points at is still unreached. A `references/` directory with nothing in it fails too — the extractor refuses to find nothing.
+- **Every link resolves.** In SKILL.md, README.md, CHANGELOG.md and every reference, each relative link target exists, and each `#anchor` matches a heading in the target the way GitHub would slug it: lowercased, punctuation dropped (the Unicode dashes and quotes included), spaces to hyphens, duplicates suffixed `-1`, `-2`. Links inside code fences and code spans are text, not links, and are left alone.
+- **Each of those is able to fail, every run.** The script copies the repository, plants one defect — no frontmatter, an unclosed one, a missing key, an invalid name, a name the symlink disagrees with, an oversized description, an orphan reference, a dead link, a dead anchor — and runs itself on the copy, requiring red *for that defect's own reason*. Two controls run beside them: a faithful copy must pass, and a link inside a code fence must not be treated as one. This is why the file can be copied verbatim without the warning the secret gate carries: a copy proves itself in its own repository each time it is run.
+
+It needs bash 3.2 and POSIX tools only, so it runs on a macOS runner unchanged. What it deliberately leaves to other skills: whether the readme hard-wraps its paragraphs belongs to the create-readme skill's checker, and what a changelog looks like to the [versioning](https://github.com/rokokol/versioning-skill) skill's `check-changelog.sh`; a repository's gate runs all three side by side.
 
 ## One source of truth per list
 
