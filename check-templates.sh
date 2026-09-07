@@ -44,8 +44,16 @@ echo "== the pin guard is able to fail, and does not fail on itself"
 # spelled a second time here — two copies of a regex disagree within a month
 pattern=$(sed -n "s/.*grep -rEn '\(.*\)' \.github\/workflows.*/\1/p" templates/github/workflows/build.yml)
 [ -n "$pattern" ] || fail "could not read the pin guard's pattern out of the build.yml template"
-grep -qE "$pattern" tests/fixtures/unpinned-workflow.yml ||
-  fail "the pin guard's pattern matches nothing in tests/fixtures/unpinned-workflow.yml — it cannot catch anything"
+# Every step of the fixture is one unpinned shape; each must match on its own, or an
+# alternative of the pattern can be dead while the others keep the fixture red
+n=0
+while IFS= read -r step; do
+  n=$((n + 1))
+  printf '%s\n' "$step" | grep -qE "$pattern" ||
+    fail "the pin guard's pattern misses this line of tests/fixtures/unpinned-workflow.yml: $step"
+done < <(grep -E '^\s*- run:' tests/fixtures/unpinned-workflow.yml)
+[ "$n" -gt 0 ] || fail "tests/fixtures/unpinned-workflow.yml has no run steps — it cannot prove anything"
+echo "   $n unpinned shapes, each caught"
 # The guard greps the workflows including the file that carries it, so a literal
 # sub-pattern would redden the repo on itself — see references/pinning.md
 if grep -qE "$pattern" templates/github/workflows/build.yml; then
@@ -70,17 +78,23 @@ if ! (cd "$sec" && ./tests/no-secrets.sh >/dev/null 2>&1); then
   rm -rf "$sec"
   fail "the secret gate reddens on its own source — a pattern is matching its own text"
 fi
-# Then one planted value per shape, each on its own tracked file, so a single
-# over-broad pattern cannot cover for a dead one
+# Then one planted value per shape, each on its own tracked file, and the gate must
+# name that shape: a value caught only by some other, over-broad pattern means the
+# pattern meant for it is dead
 i=0
-while IFS= read -r line; do
+while IFS=$'\t' read -r shape value; do
   i=$((i + 1))
-  printf '%s\n' "$line" >"$sec/planted-$i.txt"
+  printf '%s\n' "$value" >"$sec/planted-$i.txt"
   git -C "$sec" add -A
-  if (cd "$sec" && ./tests/no-secrets.sh >/dev/null 2>&1); then
-    printf 'the gate stayed green on: %s\n' "${line:0:24}…" >&2
+  if out=$(cd "$sec" && ./tests/no-secrets.sh 2>&1); then
+    printf 'the gate stayed green on: %s\n' "${value:0:24}…" >&2
     rm -rf "$sec"
     fail "a planted secret shape went unnoticed — see tests/fixtures/planted-secrets.sh"
+  fi
+  if ! printf '%s\n' "$out" | grep -qxF "secret-gate: $shape"; then
+    printf '%s\n' "$out" >&2
+    rm -rf "$sec"
+    fail "the gate went red on ${value:0:24}… but did not call it '$shape' — the pattern for that shape is dead"
   fi
   rm -f "$sec/planted-$i.txt"
   git -C "$sec" add -A

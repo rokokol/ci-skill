@@ -101,7 +101,7 @@ Asking the same question of a *test suite* — would it notice if the code broke
 nix develop -c ./check-templates.sh
 ```
 
-Lints the scripts and both checker templates, runs actionlint over every workflow template, runs `check-skill.sh` on this repository's own docs, then proves each check can fail. actionlint must reject the known-bad workflow in `tests/fixtures/`. The pin guard's pattern — read *out of* the build template rather than spelled a second time — must match `tests/fixtures/unpinned-workflow.yml` and must **not** match the template carrying it. The secret gate is exercised end to end in a throwaway repository: clean while scanning only its own source, then red on each of the 31 planted key shapes in turn. And the skill gate plants nine defects in copies of this repository and requires itself to go red on each. Every one of those halves was watched failing before it was trusted
+Lints the scripts and both checker templates, runs actionlint over every workflow template, runs `check-skill.sh` on this repository's own docs, then proves each check can fail. actionlint must reject the known-bad workflow in `tests/fixtures/`. The pin guard's pattern — read *out of* the build template rather than spelled a second time — must match every step of `tests/fixtures/unpinned-workflow.yml` on its own and must **not** match the template carrying it. The secret gate is exercised end to end in a throwaway repository: clean while scanning only its own source, then red on each of the 31 planted key shapes in turn, naming that shape and not another. And the skill gate plants nine defects in copies of this repository and requires itself to go red on each. Every one of those halves was watched failing before it was trusted
 
 ## Layout
 
