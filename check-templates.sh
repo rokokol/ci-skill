@@ -14,8 +14,9 @@ fail() {
 }
 
 echo "== the scripts lint themselves, templates included"
-shellcheck check-templates.sh ci.sh templates/no-secrets.sh templates/check-skill.sh tests/fixtures/planted-secrets.sh
-shfmt -d -i 2 -ci check-templates.sh ci.sh templates/no-secrets.sh templates/check-skill.sh tests/fixtures/planted-secrets.sh
+scripts=(check-templates.sh ci.sh templates/no-secrets.sh templates/check-skill.sh templates/check-pins.sh tests/fixtures/planted-secrets.sh)
+shellcheck "${scripts[@]}"
+shfmt -d -i 2 -ci "${scripts[@]}"
 
 echo "== workflow templates pass actionlint"
 work=$(mktemp -d)
@@ -39,26 +40,10 @@ echo "== this repository passes the skill gate it hands out"
 # both the gate on this skill's docs and the falsification of the template
 templates/check-skill.sh -n ci .
 
-echo "== the pin guard is able to fail, and does not fail on itself"
-# One source of truth: the pattern is read out of the template that carries it, never
-# spelled a second time here — two copies of a regex disagree within a month
-pattern=$(sed -n "s/.*grep -rEn '\(.*\)' \.github\/workflows.*/\1/p" templates/github/workflows/build.yml)
-[ -n "$pattern" ] || fail "could not read the pin guard's pattern out of the build.yml template"
-# Every step of the fixture is one unpinned shape; each must match on its own, or an
-# alternative of the pattern can be dead while the others keep the fixture red
-n=0
-while IFS= read -r step; do
-  n=$((n + 1))
-  printf '%s\n' "$step" | grep -qE "$pattern" ||
-    fail "the pin guard's pattern misses this line of tests/fixtures/unpinned-workflow.yml: $step"
-done < <(grep -E '^\s*- run:' tests/fixtures/unpinned-workflow.yml)
-[ "$n" -gt 0 ] || fail "tests/fixtures/unpinned-workflow.yml has no run steps — it cannot prove anything"
-echo "   $n unpinned shapes, each caught"
-# The guard greps the workflows including the file that carries it, so a literal
-# sub-pattern would redden the repo on itself — see references/pinning.md
-if grep -qE "$pattern" templates/github/workflows/build.yml; then
-  fail "the pin guard's pattern matches the template carrying it — break the self-match, see references/pinning.md"
-fi
+echo "== the pin guard passes this repository's workflows and the templates, proven per shape"
+# check-pins.sh plants every shape it claims to catch and every pinned spelling on each
+# run, so running it is both the guard on these workflows and the proof of the template
+templates/check-pins.sh .github/workflows templates/github/workflows
 
 echo "== the secret gate catches every shape it claims, and is quiet on itself"
 # The template is exercised end to end, in a throwaway repository, rather than by

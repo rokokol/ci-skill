@@ -51,7 +51,7 @@ Then ask Claude Code to write, review or check CI, push to a repository that has
 | | |
 |---|---|
 | **[Gate or detector, never both](references/badges.md)** | Checks that depend only on the repo gate pull requests. Checks that depend on someone else's uptime — mirrors, `:latest` images, live sites — run on push, on a weekly cron and by hand, **never on PRs**: a Debian mirror having an afternoon must not redden someone's rename, and the weekly run is the drift alarm those checks exist to be |
-| **[Everything pinned](references/pinning.md)** | Actions by version under dependabot, tools from the repo's own lockfile — `nix develop`, `npm ci`, `cargo --locked` — never `nix run nixpkgs#tool`, `npx tool@latest`, `pip install tool`. An unpinned lookup is a mirror-fate test: the job changes behaviour with zero change in the repo. A guard step greps the workflows and fails on it |
+| **[Everything pinned](references/pinning.md)** | Actions by version under dependabot, tools from the repo's own lockfile — `nix develop`, `npm ci`, `cargo --locked` — never `nix run nixpkgs#tool`, `npx tool@latest`, `pip install tool`. An unpinned lookup is a mirror-fate test: the job changes behaviour with zero change in the repo. `check-pins.sh`, one file copied verbatim, greps the workflows and fails on it, proving per shape on every run that it can |
 | **[The build workflow is callable](references/workflows.md)** | `workflow_call` with a `ref` input, so bots verify a branch by running *the real workflow* instead of a copy of its commands that drifts away from it |
 | **[Bumps land themselves, on green](references/bump-cascade.md)** | A weekly bump→verify→land cascade: bump onto a dated branch, verify by calling the build workflow against it, fast-forward and delete only on green — red leaves the branch standing for a human |
 | **[One badge per statement](references/badges.md)** | A status badge is per workflow *file*, so anything deserving its own badge gets a thin wrapper delegating to one reusable job. The wrappers differ by name and input; the logic lives once |
@@ -77,19 +77,20 @@ Every subcommand takes `-R owner/repo` to aim at another repository; without it,
 
 ## Templates
 
-`templates/github/workflows/` holds the four workflow files the rules describe, and beside them two checkers worth having in any repository:
+`templates/github/workflows/` holds the four workflow files the rules describe, and beside them three checkers worth having in any repository:
 
 ```
 github/workflows/
-  build.yml            the gate: workflow_call + ref, the pin guard, least privilege
+  build.yml            the gate: workflow_call + ref, calls the pin guard, least privilege
   bump-cascade.yml     weekly bump -> verify by calling build.yml -> land on green
   detector.yml         the reusable world-facing job
   detector-target.yml  the thin wrapper that gives that job its own badge
 no-secrets.sh          refuse to ship a value that slipped past .gitignore
+check-pins.sh          the pin guard: no tool from a registry, proven per shape on every run
 check-skill.sh         the gate a skill repository needs, falsifying itself on every run
 ```
 
-`EXAMPLE` markers sit on everything repo-specific — the pin patterns of your ecosystem, the bump command, what the detector probes, the secret shapes only your repo can leak. `check-skill.sh` has no such part: copy it verbatim and call it from the repo's own gate as `check-skill.sh -n <skill-name>` — it checks that SKILL.md loads at all, that every file under `references/` is reached from SKILL.md by a chain of links, and that every relative link and heading anchor resolves, then plants each of those defects in a throwaway copy and requires itself to go red on each
+`EXAMPLE` markers sit on everything repo-specific — the bump command, what the detector probes, the secret shapes only your repo can leak. The other two checkers have no such part and are copied verbatim. `check-pins.sh` greps the workflows for every unpinned-lookup shape (`nix run nixpkgs#`, `npx`, `pip install`, `pipx`, `uvx`, `go install @latest`, `cargo install` without `--locked`, `curl | sh`, an action at `@main`) and, before scanning, plants each shape alone in a throwaway workflow and requires a finding that quotes it, then every pinned spelling together and requires quiet. `check-skill.sh -n <skill-name>` checks that SKILL.md loads at all, that every file under `references/` is reached from SKILL.md by a chain of links, and that every relative link and heading anchor resolves, then plants each of those defects in a throwaway copy and requires itself to go red on each
 
 > [!IMPORTANT]
 > Copying the secret gate proves nothing. The mechanism travels, the knowledge does not — a copy is worth running only once it has been falsified **in its own repository**: break what it watches, see red, put it back
@@ -102,7 +103,7 @@ Asking the same question of a *test suite* — would it notice if the code broke
 nix develop -c ./check-templates.sh
 ```
 
-Lints the scripts and both checker templates, runs actionlint over every workflow template, runs `check-skill.sh` on this repository's own docs, then proves each check can fail. actionlint must reject the known-bad workflow in `tests/fixtures/`. The pin guard's pattern — read *out of* the build template rather than spelled a second time — must match every step of `tests/fixtures/unpinned-workflow.yml` on its own and must **not** match the template carrying it. The secret gate is exercised end to end in a throwaway repository: clean while scanning only its own source, then red on each of the 31 planted key shapes in turn, naming that shape and not another. And the skill gate plants nine defects in copies of this repository and requires itself to go red on each. Every one of those halves was watched failing before it was trusted
+Lints the scripts and all three checker templates, runs actionlint over every workflow template, runs `check-skill.sh` on this repository's own docs and `check-pins.sh` on its workflows and the workflow templates, then proves each check can fail. actionlint must reject the known-bad workflow in `tests/fixtures/`. The pin guard plants its fourteen shapes and six pinned spellings itself. The secret gate is exercised end to end in a throwaway repository: clean while scanning only its own source, then red on each of the 31 planted key shapes in turn, naming that shape and not another. And the skill gate plants nine defects in copies of this repository and requires itself to go red on each. Every one of those halves was watched failing before it was trusted
 
 ## Layout
 
@@ -110,7 +111,7 @@ Lints the scripts and both checker templates, runs actionlint over every workflo
 SKILL.md             the rules an agent reads
 ci.sh                the harness: status / runs / watch / failed / dispatch / rerun
 references/          one spec per rule: workflows, pinning, badges, bump-cascade, checks, ops
-templates/           copyable workflows, no-secrets.sh and check-skill.sh, EXAMPLE markers
+templates/           copyable workflows, no-secrets.sh, check-pins.sh and check-skill.sh
 check-templates.sh   the self-testing template lint
 tests/fixtures/      the known-bad inputs the checks must fail on
 ```

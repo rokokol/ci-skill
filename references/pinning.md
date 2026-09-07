@@ -6,22 +6,22 @@ An unpinned tool lookup is a mirror-fate test: `nix run nixpkgs#shfmt`, `npx pre
 
 - **Actions by version, watched.** `uses: actions/checkout@v7` — a major tag, not `@master` — with dependabot's `github-actions` ecosystem on weekly, so the pin moves by PR, not by surprise.
 - **Toolchains and linters from the repo's own lockfile.** Whatever the ecosystem's pinned entrypoint is — `nix develop -c <tool>` (the dev shell is the pinned toolbox), `npm ci` + `npx --no-install`, `cargo run --locked`, a `uv`/`poetry` lock — the tool version is decided by a committed file, and updating it is a diff someone reviews (or the [bump cascade](bump-cascade.md) lands on green).
-- **A guard step enforces it** — greps the workflows for the unpinned patterns of the repo's ecosystem and fails the build on a match, so the rule survives the next contributor:
+- **A guard enforces it** — [`templates/check-pins.sh`](../templates/check-pins.sh), copied verbatim into the repository and run by the build workflow or by the repo's own gate, greps the workflows for the unpinned shapes and fails on a match, so the rule survives the next contributor:
 
 ```yaml
 - name: CI tools come from the lock, not the registry
-  run: |
-    if grep -rEn 'nix (run|shell) nixpkgs#|npx +[a-z@.-]|pip +install |go +install .*@latest' .github/workflows; then
-      echo "unpinned registry lookup in a workflow — pin the tool via the repo's lockfile" >&2
-      exit 1
-    fi
+  run: ./check-pins.sh
 ```
 
-Tune the pattern list to the ecosystem; keep the step's name stable so it reads as policy, not as a stray grep.
+Keep the step's name stable so it reads as policy, not as a stray grep.
 
-**The guard greps the workflows — including its own line**, which is why every sub-pattern above is written the way it is. A literal one like `pip install ` would match the guard step carrying it and redden the repo on itself the moment it landed. The fix is a quantifier the literal text cannot satisfy: the regex `pip +install ` does not match the text `pip +install `, because after `pip` the text has a space and then `+`, where the regex demands `install`; `npx +[a-z@.-]` does not match `npx +[a-z@.-]` for the same reason. Alternation groups like `nix (run|shell) nixpkgs#` are safe as written — the parentheses are grouping, not text.
+### The guard is one file, not a grep every repository re-types
 
-Then falsify the guard like any other check, and keep the falsification: this skill's `check-templates.sh` reads the pattern *out of the template* (never spelling it a second time), requires it to match `tests/fixtures/unpinned-workflow.yml`, and requires it **not** to match the template that carries it. Both halves have been watched failing. A guard that has only ever been green may simply be matching nothing.
+The first form of this rule was an inline `grep -rEn '...' .github/workflows` in the build workflow, and it drifted the way every re-typed list drifts: within a week the repository the rule came from carried only the `nix run` alternative, two others carried the full pattern, this reference carried a third spelling, and a dozen more repositories each had their own copy of one of them. Widening the pattern meant editing all of them by hand, so it was not widened. `check-pins.sh` is the one source: it travels by copying, and a copy is proven in place — on every run it plants one line per shape it claims to catch, each alone in a throwaway workflow, and requires a finding that quotes that line; then every pinned spelling together (`nix develop -c`, `npx --no-install`, `cargo install --locked`, an action at a version tag, a line marked `# check-pins: allow`, a comment) which must stay green; and a directory with no workflows, which must not read as a pass.
+
+The shapes: `nix run`/`nix shell nixpkgs#`, `npx tool` and `npx -y tool`, `pip install` in its `pip3` and `python -m pip` spellings, `pipx run`/`install`, `uvx` and `uv tool run`, `go install …@latest`, `cargo install` without `--locked`, `curl`/`wget … | sh`, and `uses: action@main`/`@master`/`@latest`. Not covered on purpose: `apt-get install` and its kin fetch the runner's system libraries at the runner image's pinned release, which is not a registry the repository could lock. A reviewed exception carries `# check-pins: allow` on its line.
+
+Because the pattern lives in a script beside the workflows rather than in one, nothing in it can match its own source line — the inline form had to spell every alternative with a quantifier the literal text could not satisfy (`pip +install ` rather than `pip install `), or the guard reddened the repository on the commit that introduced it. That trick is still the right one for any check that greps a set of files it belongs to; the secret gate uses it for exactly that reason.
 
 ## When the pinned tool moves
 

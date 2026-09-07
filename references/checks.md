@@ -15,9 +15,9 @@ A check that has never been red is a decoration: nobody knows whether it guards 
 
 Asking whether a suite would notice the code breaking — and the harness that answers it by breaking guards on purpose — belongs to the [tests](https://github.com/rokokol/tests-skill) skill, and lives there in full. Nothing about it is repeated here, because two accounts of one thing disagree within a month.
 
-## Two checkers worth copying
+## Three checkers worth copying
 
-Both live in [`templates/`](../templates/). `no-secrets.sh` is a skeleton, and carries the warning in its header: **copying it proves nothing**. The mechanism is reusable; the knowledge is not, and the property that makes it worth running is local — the copy must have been falsified in its own repository. `check-skill.sh` has no local knowledge to add, so it is copied verbatim — and it falsifies itself on every run, which is the only way a file that travels alone can stay proven.
+All live in [`templates/`](../templates/). `no-secrets.sh` is a skeleton, and carries the warning in its header: **copying it proves nothing**. The mechanism is reusable; the knowledge is not, and the property that makes it worth running is local — the copy must have been falsified in its own repository. `check-pins.sh` and `check-skill.sh` have no local knowledge to add, so they are copied verbatim — and each falsifies itself on every run, which is the only way a file that travels alone can stay proven. The pin guard is described where its rule is, in [pinning.md](pinning.md); the other two below.
 
 ### `no-secrets.sh` — the gate at the tracked-file boundary
 
