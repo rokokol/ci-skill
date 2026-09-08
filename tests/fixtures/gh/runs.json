@@ -1,0 +1,20 @@
+[
+  {
+    "databaseId": 34245254549,
+    "workflowName": "ci",
+    "status": "completed",
+    "conclusion": "success",
+    "headBranch": "master",
+    "event": "push",
+    "createdAt": "2026-09-08T15:31:05Z"
+  },
+  {
+    "databaseId": 34161681702,
+    "workflowName": "ci",
+    "status": "completed",
+    "conclusion": "cancelled",
+    "headBranch": "master",
+    "event": "push",
+    "createdAt": "2026-09-07T21:03:03Z"
+  }
+]

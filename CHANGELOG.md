@@ -2,6 +2,17 @@
 
 Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The reasoning is in [references/checks.md](references/checks.md), which owns the rule about what has no version
 
+## 2026-09-08
+
+### Fixed
+
+- **`ci.sh failed` could not see the run that mattered.** It selected on `conclusion == "failure"`, and GitHub does not use that word for a job killed by `timeout-minutes`: such a job concludes `cancelled`, a runner that never came up `startup_failure`, and `timed_out` exists as well. A gate cancelled at its job timeout therefore printed nothing here — and exited nonzero while printing it, because the empty log went through a `grep -v` under `pipefail`, which reads as a broken reader rather than as a blind one. `failed` now takes anything that concluded and was not a success, names the job with its conclusion and the steps that went wrong, and falls back from `--log-failed`, which has nothing to give for a cancelled job, to the whole log of each job that went wrong. A run where nothing went wrong is said out loud, because silence there was indistinguishable from the bug
+
+### Added
+
+- **`ci.sh log [RUN_ID] [JOB]`**, the whole log of one job whatever it concluded. `failed` cannot give it: a job that passed has no failing step, and the first green run of a job that has never run before — a new macOS matrix leg, say — is exactly the one worth reading rather than trusting. The job is named, or inferred when the run has only one, and a wrong name is answered with the names the run does have
+- **`ci.sh` is checked, not only linted.** The tool this skill hands out for reading CI had nothing behind it but `shellcheck` and `shfmt`, and both of the entries above were found by using it rather than by testing it. `check-templates.sh` now drives it against a stub `gh` that answers from real captures of two runs of another repository, one cancelled at its job timeout and one green, so the subject is `ci.sh`'s own logic and no network is involved. The stub errors on any call `ci.sh` does not make, so a check cannot pass because the fake quietly returned nothing
+
 ## 2026-09-07
 
 ### Added

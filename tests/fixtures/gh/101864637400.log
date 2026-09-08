@@ -1,0 +1,4 @@
+check	check.sh (the gate, self-tested against known-bad inputs)	2026-09-07T21:03:13.0000000Z == the scripts parse and lint
+check	check.sh (the gate, self-tested against known-bad inputs)	2026-09-07T21:03:41.0000000Z == the workflows are valid, and their tools come from the lock rather than a registry
+check	check.sh (the gate, self-tested against known-bad inputs)	2026-09-07T21:18:19.0000000Z ##[error]The operation was canceled.
+check	Post Run actions/checkout@v7	2026-09-07T21:18:19.0000000Z Post job cleanup.

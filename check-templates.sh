@@ -35,6 +35,35 @@ if (cd "$bad" && actionlint .github/workflows/*.yml >/dev/null 2>&1); then
 fi
 rm -rf "$bad"
 
+echo "== ci.sh reads a run that was cancelled, and the log of a job that was not"
+# ci.sh was lint-only until now: the tool this skill hands out for reading CI had nothing
+# checking what it reads, and both of the bugs below were found by using it. GitHub reports
+# a job killed by `timeout-minutes` as `cancelled`, never `failure`, and `failed` selected
+# on `failure` alone — so the one run that mattered printed nothing at all. And there was
+# no way to read the log of a job that passed, which is exactly what you want the first
+# time a job runs and its green needs looking at rather than trusting.
+#
+# Answered by a stub `gh` reading real captures rather than by talking to GitHub: the
+# subject here is ci.sh's own logic, and the stub errors on any call ci.sh does not make,
+# so a check cannot pass because the fake quietly returned nothing.
+mkdir -p "$work/bin"
+ln -sf "$HERE/tests/fixtures/gh-stub" "$work/bin/gh"
+stub() { (PATH="$work/bin:$PATH" GH_STUB_DIR="$HERE/tests/fixtures/gh" ./ci.sh "$@" 2>&1); }
+out=$(stub failed 34161681702) ||
+  fail "ci.sh failed exited nonzero on a cancelled run:"$'\n'"$out"
+grep -q 'check.sh (the gate' <<<"$out" ||
+  fail "ci.sh failed did not name the step a cancelled job died on — a job killed by timeout-minutes is cancelled, not failure:"$'\n'"$out"
+out=$(stub log 34245254549 bash32) ||
+  fail "ci.sh log exited nonzero on a job that succeeded:"$'\n'"$out"
+grep -q 'GNU bash, version 3.2.57' <<<"$out" ||
+  fail "ci.sh log did not print the log of a job that succeeded:"$'\n'"$out"
+# And a run where nothing went wrong has to say so: silence there is indistinguishable
+# from the bug above, which is how the bug survived being used
+out=$(stub failed 34245254549) ||
+  fail "ci.sh failed exited nonzero on a run where everything passed:"$'\n'"$out"
+grep -q 'nothing went wrong' <<<"$out" ||
+  fail "ci.sh failed printed nothing for a run where nothing went wrong, which reads exactly like a reader that cannot see:"$'\n'"$out"
+
 echo "== this repository passes the skill gate it hands out"
 # check-skill.sh proves its own checks able to fail on every run, so running it here is
 # both the gate on this skill's docs and the falsification of the template

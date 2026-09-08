@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# A `gh` that answers from files instead of from GitHub, so ci.sh's own logic — which
+# conclusions it treats as worth showing, which job it names, which log it reaches for —
+# is checked without a network, a token, or a repository that has to be kept in a
+# particular state. It answers only the calls ci.sh makes; anything else is an error
+# rather than an empty string, because a stub that silently returns nothing would make a
+# check pass for the wrong reason.
+#
+# GH_STUB_DIR holds: runs.json, <run-id>.jobs.json, <run-id>.log-failed, <job-id>.log
+set -euo pipefail
+
+dir="${GH_STUB_DIR:?gh-stub needs GH_STUB_DIR}"
+
+emit() { # emit FILE — the file, through --jq when one was asked for
+  [[ -f "$1" ]] || {
+    printf 'gh-stub: no fixture at %s\n' "$1" >&2
+    exit 1
+  }
+  if [[ -n "$jq_expr" ]]; then jq -r "$jq_expr" "$1"; else cat "$1"; fi
+}
+
+# gh's own flags, gathered wherever they appear, as gh accepts them
+jq_expr=""
+log_failed=""
+want_log=""
+job_id=""
+run_id=""
+args=()
+while (($#)); do
+  case "$1" in
+    --jq)
+      jq_expr="${2:?--jq needs an expression}"
+      shift 2
+      ;;
+    --json)
+      shift 2
+      ;;
+    -R | --repo)
+      shift 2
+      ;;
+    --limit)
+      shift 2
+      ;;
+    --log-failed)
+      log_failed=1
+      shift
+      ;;
+    --log)
+      want_log=1
+      shift
+      ;;
+    --job)
+      job_id="${2:?--job needs an id}"
+      shift 2
+      ;;
+    *)
+      args+=("$1")
+      shift
+      ;;
+  esac
+done
+set -- "${args[@]+"${args[@]}"}"
+
+case "${1:-}${2:+ $2}" in
+  "run list")
+    emit "$dir/runs.json"
+    ;;
+  "run view")
+    run_id="${3:?gh-stub: run view needs a run id}"
+    if [[ -n "$log_failed" ]]; then
+      # A cancelled job has no failed step, so gh has nothing to hand back: the file is
+      # absent on purpose, and an absent one is empty output rather than an error
+      [[ -f "$dir/$run_id.log-failed" ]] && cat "$dir/$run_id.log-failed" || :
+    elif [[ -n "$want_log" ]]; then
+      emit "$dir/${job_id:-$run_id}.log"
+    else
+      emit "$dir/$run_id.jobs.json"
+    fi
+    ;;
+  *)
+    printf 'gh-stub: not a call ci.sh makes: %s\n' "$*" >&2
+    exit 1
+    ;;
+esac

@@ -6,14 +6,17 @@
 #   ci.sh status              latest run of every workflow — the badge row, in a terminal
 #   ci.sh runs [N]            the N most recent runs (default 10)
 #   ci.sh watch               follow the runs of the current HEAD until all conclude
-#   ci.sh failed [RUN_ID]     the failing steps of a run, then the log lines around the
-#                             actual error — not the cleanup noise a raw log tail shows
+#   ci.sh failed [RUN_ID]     the steps of a run that went wrong — failed, cancelled or
+#                             timed out alike — then the log lines around the actual
+#                             error, not the cleanup noise a raw log tail shows
+#   ci.sh log [RUN_ID] [JOB]  the whole log of one job, whatever it concluded: the first
+#                             green run of a new job is the one worth reading
 #   ci.sh dispatch WORKFLOW [REF]
 #                             fire a workflow_dispatch and follow it
 #   ci.sh rerun [RUN_ID]      rerun the failed jobs of a run (latest failed run if omitted)
 set -euo pipefail
 
-usage() { sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
 die() {
   printf 'ci.sh: %s\n' "$1" >&2
@@ -87,20 +90,68 @@ case "$cmd" in
 
   failed)
     # The failing step's own log, not the whole run's tail — a raw tail shows credential
-    # cleanup and orphan reaping, never the error
+    # cleanup and orphan reaping, never the error.
+    #
+    # "Went wrong" is anything that concluded and was not a success: a job killed by
+    # `timeout-minutes` concludes `cancelled`, one whose runner never came up
+    # `startup_failure`, and `timed_out` exists as well. Selecting on `failure` alone left
+    # this blind to exactly the run worth reading — a gate cancelled at its job timeout
+    # printed nothing here, and exited nonzero while printing it, because the empty log
+    # went through a `grep -v` under pipefail.
     run_id="${1:-}"
     if [[ -z "$run_id" ]]; then
-      run_id=$(run_list 30 | jq -r '[.[] | select(.conclusion == "failure")][0].databaseId // empty')
-      [[ -n "$run_id" ]] || die "no failed run among the last 30"
+      run_id=$(run_list 30 | jq -r '[.[] | select(.conclusion // "" | . != "" and . != "success" and . != "skipped")][0].databaseId // empty')
+      [[ -n "$run_id" ]] || die "no run among the last 30 went wrong"
     fi
-    gh run view "${REPO_ARGS[@]+"${REPO_ARGS[@]}"}" "$run_id" --json jobs --jq '
-      .jobs[] | select(.conclusion == "failure") |
-      "== job: \(.name)\n" + ([.steps[] | select(.conclusion == "failure") | "   failed step: \(.name)"] | join("\n"))'
+    jobs_json=$(gh run view "${REPO_ARGS[@]+"${REPO_ARGS[@]}"}" "$run_id" --json jobs)
+    bad=$(jq -c '[.jobs[] | select(.conclusion // "" | . != "" and . != "success" and . != "skipped")]' <<<"$jobs_json")
+    if [[ "$(jq -r 'length' <<<"$bad")" == 0 ]]; then
+      # Said out loud, because silence here is indistinguishable from a reader that cannot
+      # see — which is the bug this subcommand had
+      printf 'run %s: nothing went wrong — every job concluded success\n' "$run_id"
+      exit 0
+    fi
+    jq -r '.[] |
+      "== job: \(.name) (\(.conclusion))\n" +
+      ([.steps[] | select(.conclusion // "" | . != "" and . != "success" and . != "skipped") |
+        "   \(.conclusion) step: \(.name)"] | join("\n"))' <<<"$bad"
     echo
-    # The error itself: the failed-step log, cleanup lines dropped, last screenful kept
-    gh run view "${REPO_ARGS[@]+"${REPO_ARGS[@]}"}" "$run_id" --log-failed 2>/dev/null |
+    # The error itself. --log-failed has nothing to give for a job that was cancelled
+    # rather than failed, so fall back to the whole log of each job that went wrong
+    raw=$(gh run view "${REPO_ARGS[@]+"${REPO_ARGS[@]}"}" "$run_id" --log-failed 2>/dev/null || :)
+    if [[ -z "${raw//[[:space:]]/}" ]]; then
+      while IFS= read -r job_id; do
+        [[ -n "$job_id" ]] || continue
+        raw+=$(gh run view "${REPO_ARGS[@]+"${REPO_ARGS[@]}"}" "$run_id" --log --job "$job_id" 2>/dev/null || :)$'\n'
+      done < <(jq -r '.[].databaseId' <<<"$bad")
+    fi
+    printf '%s\n' "$raw" |
       grep -vE 'Removing credentials|Cleaning up orphan|git config --local|git-credentials|^\s*$' |
-      tail -40
+      tail -40 || :
+    ;;
+
+  log)
+    # The whole log of one job, whatever it concluded. `failed` cannot give you this: a job
+    # that passed has no failing step, and the first green run of a job that has never run
+    # before is exactly the one worth reading rather than trusting
+    run_id="${1:-}"
+    job=""
+    (($# < 2)) || job="$2"
+    if [[ -z "$run_id" ]]; then
+      run_id=$(run_list 1 | jq -r '.[0].databaseId // empty')
+      [[ -n "$run_id" ]] || die "no run to read"
+    fi
+    jobs_json=$(gh run view "${REPO_ARGS[@]+"${REPO_ARGS[@]}"}" "$run_id" --json jobs)
+    if [[ -z "$job" ]]; then
+      names=$(jq -r '.jobs[].name' <<<"$jobs_json")
+      [[ "$(grep -c . <<<"$names")" == 1 ]] ||
+        die "run $run_id has more than one job — name one of: $(tr '\n' ' ' <<<"$names")"
+      job="$names"
+    fi
+    job_id=$(jq -r --arg n "$job" '[.jobs[] | select(.name == $n) | .databaseId][0] // empty' <<<"$jobs_json")
+    [[ -n "$job_id" ]] ||
+      die "run $run_id has no job called '$job' — it has: $(jq -r '[.jobs[].name] | join(", ")' <<<"$jobs_json")"
+    gh run view "${REPO_ARGS[@]+"${REPO_ARGS[@]}"}" "$run_id" --log --job "$job_id"
     ;;
 
   dispatch)
