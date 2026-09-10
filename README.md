@@ -9,7 +9,7 @@
 ![Bash](https://img.shields.io/badge/Bash-4EAA25?style=flat&logo=gnubash&logoColor=white)
 ![Nix](https://img.shields.io/badge/Nix-flake-7EBAE4?style=flat&logo=nixos&logoColor=white)
 [![license](https://img.shields.io/badge/MIT-3DA639?style=flat)](LICENSE)
-[![ci](https://github.com/rokokol/ci-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/rokokol/ci-skill/actions/workflows/ci.yml)
+[![ci](https://github.com/rokokol/ci-skill/actions/workflows/build.yml/badge.svg)](https://github.com/rokokol/ci-skill/actions/workflows/build.yml)
 
 </div>
 
@@ -54,7 +54,7 @@ Then ask Claude Code to write, review or check CI, push to a repository that has
 | **[Everything pinned](references/pinning.md)** | Actions by version under dependabot, tools from the repo's own lockfile — `nix develop`, `npm ci`, `cargo --locked` — never `nix run nixpkgs#tool`, `npx tool@latest`, `pip install tool`. An unpinned lookup is a mirror-fate test: the job changes behaviour with zero change in the repo. `check-pins.sh`, one file vendored into every repository that runs it, greps the workflows and fails on it, proving per shape on every run that it can |
 | **[The build workflow is callable](references/workflows.md)** | `workflow_call` with a `ref` input, so bots verify a branch by running *the real workflow* instead of a copy of its commands that drifts away from it |
 | **[Bumps land themselves, on green](references/bump-cascade.md)** | A weekly bump→verify→land cascade: bump onto a dated branch, verify by calling the build workflow against it, fast-forward and delete only on green — red leaves the branch standing for a human |
-| **[A file that travels is vendored](references/bump-cascade.md#vendored-files)** | A checker another repository needs is a verbatim copy there, listed in a lock with the commit it came from and the blob it must still be. The gate refuses a copy edited in place, and the same weekly cascade takes each source's newer content, so a fix made once reaches every copy |
+| **[A file that travels is vendored](references/bump-cascade.md#vendored-files)** | A checker another repository needs is a verbatim copy there, listed in a lock with the commit it came from and the blob it must still be. The gate refuses a copy edited in place, and a weekly cascade of the same shape takes each source's newer content, so a fix made once reaches every copy |
 | **[One badge per statement](references/badges.md)** | A status badge is per workflow *file*, so anything deserving its own badge gets a thin wrapper delegating to one reusable job. The wrappers differ by name and input; the logic lives once |
 | **[Every check is proven able to fail](references/checks.md)** | A new check runs red first — against the pre-fix state or a deliberately broken fixture. Checkers ship self-tests against known-bad inputs, and assertions on generated text match whole lines, not substrings. The same question about a *test suite* belongs to the [tests](https://github.com/rokokol/tests-skill) skill |
 | **[One source of truth per list](references/checks.md)** | Lint file lists, tool sets, version numbers — each lives in exactly one place the others read. Duplicated lists drift, and drifted lists lie. Where the version lives, and what a changelog looks like with or without one, belongs to the [versioning](https://github.com/rokokol/versioning-skill) skill |
@@ -94,7 +94,7 @@ check-skill.sh         the gate a skill repository needs, falsifying itself on e
 vendor-sync.sh         keep vendored copies byte-equal to their source, and refuse an edit in place
 ```
 
-`no-secrets.sh` rejects tracked paths matched by `.gitignore`, including paths admitted with `git add -f`, before scanning tracked contents for secret shapes; `.gitignore` itself remains ordinary repository content. `EXAMPLE` markers sit on everything repo-specific — the bump command, what the detector probes, the secret shapes only your repo can leak. The other checkers have no such part, and another repository takes them through the [vendoring cascade](references/bump-cascade.md#vendored-files) rather than by hand. `check-pins.sh` greps the workflows for every unpinned-lookup shape in its own `shapes` list (`nix run nixpkgs#`, `npx`, `pip install`, `curl | sh`, an action at `@main` and the rest) and, before scanning, requires each shape's example line to match that shape and, alone in a throwaway workflow, to be caught, then every pinned spelling together to stay quiet. `check-skill.sh -n <skill-name>` checks that SKILL.md loads at all, that every file under `references/` is reached from SKILL.md by a chain of links, and that every relative link and heading anchor resolves, then plants each of those defects in a throwaway copy and requires itself to go red on each
+`no-secrets.sh` rejects tracked paths matched by `.gitignore`, including paths admitted with `git add -f`, before scanning tracked contents for secret shapes; `.gitignore` itself remains ordinary repository content. `EXAMPLE` markers sit on everything repo-specific — the bump command, what the detector probes, the secret shapes only your repo can leak. The other checkers have no such part, and another repository takes them through the [vendoring cascade](references/bump-cascade.md#vendored-files) rather than by hand. What `check-pins.sh` catches and how it proves itself is in [pinning.md](references/pinning.md#the-guard-is-one-file-not-a-grep-every-repository-re-types), and the same for `check-skill.sh` in [checks.md](references/checks.md#check-skillsh--the-gate-a-skill-repository-needs)
 
 > [!IMPORTANT]
 > Copying the secret gate proves nothing. The mechanism travels, the knowledge does not — a copy is worth running only once it has been falsified **in its own repository**: break what it watches, see red, put it back
@@ -115,7 +115,7 @@ Lints the scripts and every checker template, runs actionlint over every workflo
 SKILL.md             the rules an agent reads
 ci.sh                the harness: status / runs / watch / failed / log / dispatch / rerun
 references/          one spec per rule: workflows, pinning, badges, bump-cascade, checks, ops
-templates/           copyable workflows, no-secrets.sh, and the vendored check-pins.sh, check-skill.sh and vendor-sync.sh
+templates/           copyable workflows, no-secrets.sh, and the travelling check-pins.sh, check-skill.sh and vendor-sync.sh
 check-templates.sh   the self-testing template lint
 tests/fixtures/      the known-bad inputs the checks must fail on
 ```

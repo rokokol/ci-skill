@@ -72,7 +72,11 @@ jobs:
         with:
           ref: ${{ needs.bump.outputs.branch }}
           fetch-depth: 0
-      - name: fast-forward the default branch onto the verified tree
+      # GITHUB_REF_NAME is the branch the run started on: the default branch for the weekly
+      # schedule, whose event carries no repository payload to read the default branch from
+      - name: fast-forward the branch the run started on onto the verified tree
+        env:
+          BRANCH: ${{ needs.bump.outputs.branch }}
         run: |
-          git push origin HEAD:master
-          git push origin --delete "${{ needs.bump.outputs.branch }}"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+          git push origin --delete "$BRANCH"

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Lints the workflow templates with actionlint, then proves the lint can fail at all by
-# feeding it the known-bad fixture. A checker that cannot go red is not a checker.
+# This repository's gate: lints every script and workflow template, then proves each thing
+# it checks able to fail — actionlint on a known-bad workflow, ci.sh against recorded runs,
+# the docs against ci.sh's own dispatch, the travelling checkers, vendor-sync.sh end to end
+# and the secret gate. A checker that cannot go red is not a checker.
 #
 # Needs: actionlint, shellcheck, shfmt — from PATH; CI provides them via nix develop
 set -euo pipefail
@@ -227,6 +229,50 @@ grep -qx 'on: push' "$down/.github/workflows/flow.yml" || fail "update without -
 vsync update --manual -u "$base" >/dev/null || fail "update --manual failed"
 grep -qxF 'on: [push]' "$down/.github/workflows/flow.yml" || fail "update --manual did not bring a manual line"
 
+# --manual refreshes the manual lines and nothing else: a person running it by hand must not
+# land every other copy's new content without the verify step the weekly run gives it
+printf '#!/bin/sh\necho three\n' >"$up/tool.sh"
+printf 'on: [push, pull_request]\n' >"$up/flow.yml"
+git -C "$up" commit -qam five
+vsync update --manual -u "$base" >/dev/null || fail "update --manual failed"
+grep -qxF 'on: [push, pull_request]' "$down/.github/workflows/flow.yml" || fail "update --manual did not bring the manual line"
+grep -q 'echo two' "$down/tool.sh" || fail "update --manual also took a line that is not manual, without the verify step"
+# And the weekly run names a manual copy that has fallen behind rather than skipping it in
+# silence: nothing else would ever tell a person to refresh it
+printf 'on: [workflow_dispatch]\n' >"$up/flow.yml"
+git -C "$up" commit -qam six
+out=$(vsync update -u "$base" 2>&1) || fail "update failed beside a manual line that is behind:"$'\n'"$out"
+grep -qF '.github/workflows/flow.yml is behind' <<<"$out" ||
+  fail "update did not name a manual copy that is behind its source:"$'\n'"$out"
+grep -qxF 'on: [push, pull_request]' "$down/.github/workflows/flow.yml" || fail "update without --manual changed a manual line"
+
+# The workflow guard is about where a file lands, however the path is spelled
+if vsync add -u "$base" ./.github/workflows/flow2.yml owner/src flow.yml >/dev/null 2>&1; then
+  fail "add took ./.github/workflows/flow2.yml without --manual — a leading ./ slipped past the guard"
+fi
+if vsync add -u "$base" .github/ owner/src data/ >/dev/null 2>&1; then
+  fail "add took a directory at .github/ without --manual, which puts .github/workflows/ under an ordinary line"
+fi
+
+# A vendored directory is compared by name on both sides, so a name git would quote — here a
+# Cyrillic one — must come out the same, and a symlink, which find and git see differently,
+# is refused rather than left to read as an edit in place forever
+mkdir -p "$up/names" "$up/links"
+printf 'x\n' >"$up/names/файл.txt"
+printf 'y\n' >"$up/names/plain.txt"
+# git quotes a name with a double quote in it under any core.quotePath, so this one holds
+# the proof on a machine whose git leaves non-ASCII names bare
+printf 'w\n' >"$up/names/q\"uote.txt"
+printf 'z\n' >"$up/links/real.txt"
+ln -s real.txt "$up/links/alias.txt"
+git -C "$up" add -A
+git -C "$up" commit -qm names
+vsync add -u "$base" names/ owner/src names/ >/dev/null || fail "add could not take a directory with a non-ASCII file name"
+vsync check >/dev/null || fail "check rejected a directory with a non-ASCII file name right after taking it"
+if vsync add -u "$base" links/ owner/src links/ >/dev/null 2>&1; then
+  fail "add took a directory holding a symlink, which a copy cannot keep byte for byte"
+fi
+
 # vendor-sync.sh vendors itself, so an update rewrites the very script bash is executing.
 # bash reads a script as it runs, so a copy rewritten in place makes the running update
 # carry on from its old offset into whatever the new text holds there; a longer header
@@ -244,7 +290,7 @@ vsync add -u "$base" vendor-sync.sh owner/src vendor-sync.sh >/dev/null ||
 git -C "$up" commit -qam "a longer vendor-sync"
 out=$(vsync update -u "$base" 2>&1) ||
   fail "update of vendor-sync.sh by itself failed:"$'\n'"$out"
-[ "$(printf '%s\n' "$out" | grep -c '^vendor-sync: .* taken anew$')" -eq 1 ] ||
+[ "$(printf '%s\n' "$out" | grep -c '^vendor-sync: .* taken anew')" -eq 1 ] ||
   fail "update of vendor-sync.sh by itself did not finish exactly once:"$'\n'"$out"
 cmp -s "$up/vendor-sync.sh" "$down/vendor-sync.sh" || fail "update left vendor-sync.sh different from its source"
 vsync check >/dev/null || fail "check rejected vendor-sync.sh after it updated itself"

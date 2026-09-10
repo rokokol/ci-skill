@@ -51,10 +51,15 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
+      # Every vendored copy is byte-equal to its source: one edited here instead of at the
+      # source fails by name — see .github/vendor.lock. Delete this step if the repo's own
+      # gate already runs it
+      - name: vendored copies are byte-equal to their source
+        run: ./vendor-sync.sh check
       # Unpinned registry lookups make a job change behavior with zero change in the
-      # repo; tools come from the lockfile, and check-pins.sh — copied verbatim from the
-      # ci skill's templates/ — keeps it that way, proving on every run that it catches
-      # each shape it claims. Delete this step if the repo's own gate already runs it
+      # repo; tools come from the lockfile, and check-pins.sh, vendored from the ci skill,
+      # keeps it that way, proving on every run that it catches each shape it claims.
+      # Delete this step if the repo's own gate already runs it
       - name: CI tools come from the lock, not the registry
         run: ./check-pins.sh
       # >>> EXAMPLE: run the build system's own lint check — the file list lives there,
