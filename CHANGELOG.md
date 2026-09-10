@@ -1,12 +1,16 @@
 # Changelog
 
-Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The reasoning is in [references/checks.md](references/checks.md), which owns the rule about what has no version
+Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The rule lives in the [versioning](https://github.com/rokokol/versioning-skill) skill, which owns what has no version
 
 ## 2026-09-10
 
 ### Added
 
 - a section in `check-templates.sh` that reads the subcommands from `ci.sh`'s own dispatch and fails when the README's table, `references/ops.md`'s table or either layout line leaves one out, so the omission below cannot recur in silence. It proves itself on every run against a copy of `ops.md` with its `log` row removed, and it refuses to pass when it reads no subcommand at all — which is how its first draft, matching the wrong indentation, was caught before it could pass on nothing
+
+### Changed
+
+- the description sat at exactly the 1024 characters an agent reads, so any trigger added to it would have been cut; a trigger listed twice is gone, leaving room
 
 ### Fixed
 
