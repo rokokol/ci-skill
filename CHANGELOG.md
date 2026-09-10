@@ -2,6 +2,18 @@
 
 Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The reasoning is in [references/checks.md](references/checks.md), which owns the rule about what has no version
 
+## 2026-09-10
+
+### Added
+
+- a section in `check-templates.sh` that reads the subcommands from `ci.sh`'s own dispatch and fails when the README's table, `references/ops.md`'s table or either layout line leaves one out, so the omission below cannot recur in silence. It proves itself on every run against a copy of `ops.md` with its `log` row removed, and it refuses to pass when it reads no subcommand at all — which is how its first draft, matching the wrong indentation, was caught before it could pass on nothing
+
+### Fixed
+
+- **`ci.sh log`, added on 2026-09-08, was missing from every place that lists the harness**: the layout in `SKILL.md`, the README's table and layout, and the table in `references/ops.md`, whose introduction called the list "the same six questions". An agent learning the harness from its documentation had no way to find it
+- counts written into prose beside the list they count — "Three reusable checkers", "the four workflow files", "the other two below", and the pin guard's and the secret gate's shape counts in the README — each a second copy of a length that lives in the list or the script, one of them already wrong
+- a trailing full stop on every rule in `SKILL.md`, against the rule every readme in the family is held to
+
 ## 2026-09-08
 
 ### Fixed

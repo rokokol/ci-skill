@@ -8,6 +8,7 @@
 | `ci.sh runs [N]` | recent runs with ids, for picking a target |
 | `ci.sh watch` | block until every run of the current HEAD concludes; nonzero if any failed — the after-push command |
 | `ci.sh failed [ID]` | the failing steps, then the log around the actual error (latest failed run if no id) |
+| `ci.sh log [ID] [JOB]` | the whole log of one job, whatever it concluded — `failed` cannot show a job that passed, and the first green run of a new job is the one to read rather than trust (latest run if no id; the job may be left out when the run has only one) |
 | `ci.sh dispatch WF [REF]` | fire a `workflow_dispatch` and follow it to a verdict |
 | `ci.sh rerun [ID]` | rerun a run's failed jobs and follow |
 

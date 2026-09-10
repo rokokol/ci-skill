@@ -64,6 +64,44 @@ out=$(stub failed 34245254549) ||
 grep -q 'nothing went wrong' <<<"$out" ||
   fail "ci.sh failed printed nothing for a run where nothing went wrong, which reads exactly like a reader that cannot see:"$'\n'"$out"
 
+echo "== every doc that lists the harness names every subcommand ci.sh has"
+# ci.sh's own dispatch is the list. The docs restate it for readers, and a restated list
+# drifts: `log` shipped and stayed missing from every one of them until a review caught
+# it. The subcommands are read from the dispatch rather than typed out here, so this check
+# cannot fall behind the same way
+# shellcheck disable=SC2016 # `$cmd` and `$/` are awk's, matched literally in ci.sh
+subcommands=$(awk '/^case "\$cmd" in$/ { f = 1; next } f && /^esac$/ { exit } f && /^  [a-z]+\)$/ { gsub(/[ )]/, ""); print }' ci.sh)
+[ -n "$subcommands" ] ||
+  fail "no subcommand could be read from ci.sh's dispatch — the check below would pass on nothing"
+docs_name_every_subcommand() { # DIR -> 0, or 1 with one line per omission
+  local dir="$1" sub doc missing=0
+  while IFS= read -r sub; do
+    for doc in README.md references/ops.md; do
+      grep -qF "| \`ci.sh $sub" "$dir/$doc" || {
+        echo "$doc has no table row for ci.sh $sub"
+        missing=1
+      }
+    done
+    for doc in SKILL.md README.md; do
+      grep -E '^ci\.sh +the harness:' "$dir/$doc" | grep -qw -- "$sub" || {
+        echo "$doc's layout line leaves out $sub"
+        missing=1
+      }
+    done
+  done <<<"$subcommands"
+  return "$missing"
+}
+out=$(docs_name_every_subcommand .) ||
+  fail "the docs have fallen behind ci.sh:"$'\n'"$out"
+# And it is able to fail, on the very omission it exists for, planted in a copy
+mkdir -p "$work/docs-planted/references"
+cp SKILL.md README.md "$work/docs-planted/"
+# shellcheck disable=SC2016 # the backtick is markdown, matched literally
+grep -v '^| `ci.sh log' references/ops.md >"$work/docs-planted/references/ops.md"
+if docs_name_every_subcommand "$work/docs-planted" >/dev/null; then
+  fail "ops.md with its ci.sh log row removed passed — the subcommand check cannot catch the omission it exists for"
+fi
+
 echo "== this repository passes the skill gate it hands out"
 # check-skill.sh proves its own checks able to fail on every run, so running it here is
 # both the gate on this skill's docs and the falsification of the template

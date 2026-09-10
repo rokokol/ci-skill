@@ -62,7 +62,7 @@ Then ask Claude Code to write, review or check CI, push to a repository that has
 
 ## The harness
 
-[`ci.sh`](ci.sh) is the operational half — the same six questions you would otherwise re-derive from `gh run` flags every time:
+[`ci.sh`](ci.sh) is the operational half — the questions you would otherwise re-derive from `gh run` flags every time:
 
 | Command | What it answers |
 |---|---|
@@ -70,6 +70,7 @@ Then ask Claude Code to write, review or check CI, push to a repository that has
 | `ci.sh runs [N]` | the recent runs with their ids, for picking a target |
 | `ci.sh watch` | blocks until every run of the current HEAD concludes, nonzero if any failed — the after-push command |
 | `ci.sh failed [ID]` | which steps failed, then the log around the real error |
+| `ci.sh log [ID] [JOB]` | the whole log of one job, whatever it concluded — the first green run of a new job is the one worth reading rather than trusting |
 | `ci.sh dispatch WF [REF]` | fire a `workflow_dispatch` and follow it to a verdict |
 | `ci.sh rerun [ID]` | rerun a run's failed jobs and follow |
 
@@ -77,7 +78,7 @@ Every subcommand takes `-R owner/repo` to aim at another repository; without it,
 
 ## Templates
 
-`templates/github/workflows/` holds the four workflow files the rules describe, and beside them three checkers worth having in any repository:
+`templates/github/workflows/` holds the workflow files the rules describe, and beside them the checkers worth having in any repository:
 
 ```
 github/workflows/
@@ -90,7 +91,7 @@ check-pins.sh          the pin guard: no tool from a registry, proven per shape 
 check-skill.sh         the gate a skill repository needs, falsifying itself on every run
 ```
 
-`no-secrets.sh` rejects tracked paths matched by `.gitignore`, including paths admitted with `git add -f`, before scanning tracked contents for secret shapes; `.gitignore` itself remains ordinary repository content. `EXAMPLE` markers sit on everything repo-specific — the bump command, what the detector probes, the secret shapes only your repo can leak. The other two checkers have no such part and are copied verbatim. `check-pins.sh` greps the workflows for every unpinned-lookup shape (`nix run nixpkgs#`, `npx`, `pip install`, `pipx`, `uvx`, `go install @latest`, `cargo install` without `--locked`, `curl | sh`, an action at `@main`) and, before scanning, plants each shape alone in a throwaway workflow and requires a finding that quotes it, then every pinned spelling together and requires quiet. `check-skill.sh -n <skill-name>` checks that SKILL.md loads at all, that every file under `references/` is reached from SKILL.md by a chain of links, and that every relative link and heading anchor resolves, then plants each of those defects in a throwaway copy and requires itself to go red on each
+`no-secrets.sh` rejects tracked paths matched by `.gitignore`, including paths admitted with `git add -f`, before scanning tracked contents for secret shapes; `.gitignore` itself remains ordinary repository content. `EXAMPLE` markers sit on everything repo-specific — the bump command, what the detector probes, the secret shapes only your repo can leak. The other checkers have no such part and are copied verbatim. `check-pins.sh` greps the workflows for every unpinned-lookup shape (`nix run nixpkgs#`, `npx`, `pip install`, `pipx`, `uvx`, `go install @latest`, `cargo install` without `--locked`, `curl | sh`, an action at `@main`) and, before scanning, plants each shape alone in a throwaway workflow and requires a finding that quotes it, then every pinned spelling together and requires quiet. `check-skill.sh -n <skill-name>` checks that SKILL.md loads at all, that every file under `references/` is reached from SKILL.md by a chain of links, and that every relative link and heading anchor resolves, then plants each of those defects in a throwaway copy and requires itself to go red on each
 
 > [!IMPORTANT]
 > Copying the secret gate proves nothing. The mechanism travels, the knowledge does not — a copy is worth running only once it has been falsified **in its own repository**: break what it watches, see red, put it back
@@ -103,13 +104,13 @@ Asking the same question of a *test suite* — would it notice if the code broke
 nix develop -c ./check-templates.sh
 ```
 
-Lints the scripts and all three checker templates, runs actionlint over every workflow template, runs `check-skill.sh` on this repository's own docs and `check-pins.sh` on its workflows and the workflow templates, then proves each check can fail. actionlint must reject the known-bad workflow in `tests/fixtures/`. The pin guard plants its fourteen shapes and six pinned spellings itself. The secret gate is exercised end to end in a throwaway repository: clean while scanning only its own source, red on `user/preferences.md` covered by `.gitignore` and admitted with `git add -f`, then red on each of the 31 planted key shapes in turn, naming every finding. And the skill gate plants nine defects in copies of this repository and requires itself to go red on each. Every one of those halves was watched failing before it was trusted
+Lints the scripts and every checker template, runs actionlint over every workflow template, runs `check-skill.sh` on this repository's own docs and `check-pins.sh` on its workflows and the workflow templates, then proves each check can fail. actionlint must reject the known-bad workflow in `tests/fixtures/`. The pin guard plants every shape it claims to catch and every pinned spelling it must stay quiet on, itself. The secret gate is exercised end to end in a throwaway repository: clean while scanning only its own source, red on `user/preferences.md` covered by `.gitignore` and admitted with `git add -f`, then red on each planted key shape in turn, naming every finding. And the skill gate plants a defect per check in copies of this repository and requires itself to go red on each. Every one of those halves was watched failing before it was trusted
 
 ## Layout
 
 ```
 SKILL.md             the rules an agent reads
-ci.sh                the harness: status / runs / watch / failed / dispatch / rerun
+ci.sh                the harness: status / runs / watch / failed / log / dispatch / rerun
 references/          one spec per rule: workflows, pinning, badges, bump-cascade, checks, ops
 templates/           copyable workflows, no-secrets.sh, check-pins.sh and check-skill.sh
 check-templates.sh   the self-testing template lint
