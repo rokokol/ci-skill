@@ -13,6 +13,7 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 - the description sat at exactly the 1024 characters an agent reads, so any trigger added to it would have been cut; a trigger listed twice is gone, leaving room
 - `check-pins.sh` and `check-skill.sh` are no longer "copied verbatim": their headers, `SKILL.md`, the readme, `references/pinning.md` and `references/checks.md` send a repository to the vendoring cascade instead
+- `references/workflows.md` no longer calls the runner "nobody's production environment". It is two layers: the platform — the operating system and its own userland — is exactly what a user of that system has and the cheapest portability check there is, while the tools GitHub preinstalls on top are nobody's machine. A dependency the product declares may come from the image when the job prints its version; one it never declared still may not. `references/badges.md` says that a job on a supported platform's runner is a gate, since what turns it red is nearly always the change
 ### Fixed
 
 - **`ci.sh log`, added on 2026-09-08, was missing from every place that lists the harness**: the layout in `SKILL.md`, the README's table and layout, and the table in `references/ops.md`, whose introduction called the list "the same six questions". An agent learning the harness from its documentation had no way to find it

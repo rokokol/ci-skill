@@ -9,6 +9,8 @@ Sort every check by what its failure would mean:
 
 A detector that becomes reliable enough to gate is a judgment call to revisit — but the default is separation, because a gate people learn to re-run on flake stops gating anything.
 
+A job on a runner of a platform the product supports, run with that platform's own tools, is a gate: what turns it red is nearly always the change itself — a GNU-only flag, a construct bash 3.2 rejects — and the rare red that an image update causes names itself in the tool versions such a job prints before it runs. What counts as the platform, and what the image merely happens to carry, is in [workflows.md](workflows.md#the-runner-is-a-platform-not-a-clean-machine)
+
 ## One badge per statement
 
 A GitHub status badge is per **workflow file** (`actions/workflows/<file>/badge.svg`), not per job. So each statement the README should make — "installs on Debian", "installs on Fedora", "builds" — needs its own workflow file. Duplicating the job four times reintroduces drift, so the logic lives once in a reusable workflow and each badge-bearing file is a thin wrapper:

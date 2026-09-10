@@ -38,12 +38,12 @@ An empty `ref` checks out the triggering commit, so the same lines serve push, P
 - `concurrency: <group>` on any workflow that pushes, so two runs cannot race the same branch.
 - Steps that must be able to fail loudly do not hide behind `|| true` or `2>/dev/null`; when a distro or platform legitimately cannot run a check, print a visible `SKIP` with `::notice` and exit 0 — green with a mark beats a lying red or a silent pass.
 
-## The runner is not a target environment
+## The runner is a platform, not a clean machine
 
-A hosted runner is a particular machine with a particular set of preinstalled tools, and it is nobody's production environment. Two consequences:
+A hosted runner is two layers. The platform — the operating system, its libc and its system userland: BSD `date` and `/bin/bash` 3.2 on macOS, GNU coreutils on Ubuntu — is exactly what a user of that system has, and running there is the cheapest portability check there is; the [tests](https://github.com/rokokol/tests-skill) skill's `bash32` job, its gate under the `/bin/bash` macOS ships, is that check. The extras GitHub preinstalls on top — compilers, language runtimes, `jq`, `docker`, whatever the image carries this month — are nobody's machine, and two rules follow for them:
 
 - **A job that exercises the product's install or deploy path supplies that path's dependencies itself** — from the lockfile, a container, a service container — instead of leaning on what the runner happens to carry. A preflight that refuses the runner because a real dependency is absent is *working*; the fix is to give the step the dependency the pinned way, not to soften the check. The honest "does the documented install work on a clean machine" answer comes from a container-based [detector](badges.md), never from the runner.
-- **A check must not pass because the runner already had something.** Assertions that depend on the runner's incidental contents — a preinstalled compiler, a cached image, a global tool — go green for reasons unrelated to the repo and rot silently when the runner image changes.
+- **A check must not pass because the runner already had something.** Assertions that depend on the runner's incidental contents — a preinstalled compiler, a cached image, a global tool — go green for reasons unrelated to the repo and rot silently when the runner image changes. The line is whether the product declares the thing: a dependency it documents — `jq` for a script that says it needs `jq` — may come from the image when the job prints its version first, so the day an image update changes the answer the log says so; a thing it never declared may not
 
 ## Anything that can wait for input gets a timeout
 
