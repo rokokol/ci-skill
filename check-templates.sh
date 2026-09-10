@@ -112,6 +112,25 @@ echo "== the pin guard passes this repository's workflows and the templates, pro
 # run, so running it is both the guard on these workflows and the proof of the template
 templates/check-pins.sh .github/workflows templates/github/workflows
 
+echo "== the travelling checkers keep the promises their headers make"
+# Both headers promise exit 2 for a usage error, and --help is the header itself. Both were
+# broken once: `${2:?}` made bash exit 1 with its own message, and --help printed a fixed
+# line range the header had long outgrown, dropping the exit codes and the allow marker.
+# The last comment line of each header is read here by a different means than the
+# scripts use, so a help that stops early cannot agree with it by construction
+out=$(templates/check-skill.sh -n 2>&1) && status=0 || status=$?
+[ "$status" -eq 2 ] ||
+  fail "check-skill.sh -n with no name exited $status, where its header promises 2 for a usage error:"$'\n'"$out"
+grep -q '^check-skill: -n needs a name' <<<"$out" ||
+  fail "check-skill.sh -n with no name did not say what is missing:"$'\n'"$out"
+for checker in check-skill check-pins; do
+  last=$(awk 'NR > 1 && /^#/ { last = $0; next } NR > 1 { exit } END { sub(/^# ?/, "", last); print last }' "templates/$checker.sh")
+  [ -n "$last" ] || fail "no header could be read from templates/$checker.sh — the check below would pass on nothing"
+  help=$("templates/$checker.sh" --help)
+  [ "$(printf '%s\n' "$help" | tail -n 1)" = "$last" ] ||
+    fail "$checker.sh --help stops before the end of its own header, whose last line is: $last"
+done
+
 echo "== the secret gate catches every shape it claims, and is quiet on itself"
 # The template is exercised end to end, in a throwaway repository, rather than by
 # re-testing its regexes here: the gate's subject is "what git tracks", and only a

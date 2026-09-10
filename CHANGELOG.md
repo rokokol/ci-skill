@@ -17,6 +17,8 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 - **`ci.sh log`, added on 2026-09-08, was missing from every place that lists the harness**: the layout in `SKILL.md`, the README's table and layout, and the table in `references/ops.md`, whose introduction called the list "the same six questions". An agent learning the harness from its documentation had no way to find it
 - counts written into prose beside the list they count — "Three reusable checkers", "the four workflow files", "the other two below", and the pin guard's and the secret gate's shape counts in the README — each a second copy of a length that lives in the list or the script, one of them already wrong
 - a trailing full stop on every rule in `SKILL.md`, against the rule every readme in the family is held to
+- **`check-pins.sh` proved fewer shapes than it claimed.** Four alternatives of its pattern — `pip3 install`, `pipx install`, `npx --yes` and an action at `@main` or `@latest` — had no planted example, so narrowing any of them left the self-test green; a lone planted line going red only proved that something matched it. The shapes are now a list of pairs, each shape written once beside the line it must catch, every example must match its own shape, and the scan pattern is that list joined
+- `check-skill.sh -n` with no name exited 1 with bash's own message, where its header promises 2 for a usage error; and `--help` in both checkers printed a fixed line range the header had outgrown, dropping the exit codes from one and the `# check-pins: allow` marker from the other. Both are now held by `check-templates.sh`, and the planted-defect count in `check-skill.sh` is kept by the one function every planted case goes through
 
 ## 2026-09-08
 
