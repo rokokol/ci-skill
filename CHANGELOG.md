@@ -18,6 +18,7 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ### Fixed
 
+- `templates/github/workflows/vendor-sync.yml` opens with the `---` document start, since a consumer that runs `yamllint --strict` over its tree failed on the copy it could not edit; `references/bump-cascade.md` says a copy has to pass its strictest consumer
 - **`ci.sh log`, added on 2026-09-08, was missing from every place that lists the harness**: the layout in `SKILL.md`, the README's table and layout, and the table in `references/ops.md`, whose introduction called the list "the same six questions". An agent learning the harness from its documentation had no way to find it
 - counts written into prose beside the list they count — "Three reusable checkers", "the four workflow files", "the other two below", and the pin guard's and the secret gate's shape counts in the README — each a second copy of a length that lives in the list or the script, one of them already wrong
 - a trailing full stop on every rule in `SKILL.md`, against the rule every readme in the family is held to
