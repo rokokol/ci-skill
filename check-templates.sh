@@ -14,7 +14,7 @@ fail() {
 }
 
 echo "== the scripts lint themselves, templates included"
-scripts=(check-templates.sh ci.sh templates/no-secrets.sh templates/check-skill.sh templates/check-pins.sh tests/fixtures/planted-secrets.sh)
+scripts=(check-templates.sh ci.sh templates/no-secrets.sh templates/check-skill.sh templates/check-pins.sh templates/vendor-sync.sh tests/fixtures/planted-secrets.sh)
 shellcheck "${scripts[@]}"
 shfmt -d -i 2 -ci "${scripts[@]}"
 
@@ -130,6 +130,124 @@ for checker in check-skill check-pins; do
   [ "$(printf '%s\n' "$help" | tail -n 1)" = "$last" ] ||
     fail "$checker.sh --help stops before the end of its own header, whose last line is: $last"
 done
+
+echo "== vendor-sync.sh keeps copies byte-equal to their source, and refuses an edit in place"
+# End to end against a source repository reached over file://, the same git plumbing a real
+# run uses over https, so nothing here needs the network. Every case below was watched
+# failing before the script existed
+vs="$work/vs"
+up="$vs/owner/src"
+mkdir -p "$up/data"
+git -C "$up" init -q
+git -C "$up" config user.email ci@example.invalid
+git -C "$up" config user.name ci
+printf '#!/bin/sh\necho one\n' >"$up/tool.sh"
+chmod +x "$up/tool.sh"
+printf 'a\n' >"$up/data/a.txt"
+printf 'b\n' >"$up/data/b.txt"
+printf 'on: push\n' >"$up/flow.yml"
+git -C "$up" add -A
+git -C "$up" commit -qm one
+down="$work/down"
+mkdir -p "$down"
+git -C "$down" init -q
+git -C "$down" config user.email ci@example.invalid
+git -C "$down" config user.name ci
+cp templates/vendor-sync.sh "$down/"
+base="file://$vs"
+vsync() { (cd "$down" && ./vendor-sync.sh "$@"); }
+lock="$down/.github/vendor.lock"
+
+vsync add -u "$base" tool.sh owner/src tool.sh >/dev/null ||
+  fail "vendor-sync add could not take a file from its source"
+vsync add -u "$base" data/ owner/src data/ >/dev/null ||
+  fail "vendor-sync add could not take a directory from its source"
+cmp -s "$up/tool.sh" "$down/tool.sh" || fail "add left tool.sh different from its source"
+[ -x "$down/tool.sh" ] || fail "add dropped the executable bit tool.sh has in its source"
+cmp -s "$up/data/b.txt" "$down/data/b.txt" || fail "add left data/b.txt different from its source"
+vsync check >/dev/null || fail "check rejected the copies add had just made"
+git -C "$down" add -A
+git -C "$down" commit -qm vendored
+
+# A change in the source arrives, and the lock records the commit it came from
+printf '#!/bin/sh\necho two\n' >"$up/tool.sh"
+git -C "$up" commit -qam two
+vsync update -u "$base" >/dev/null || fail "update failed on a source that had moved"
+cmp -s "$up/tool.sh" "$down/tool.sh" || fail "update did not bring tool.sh's new content"
+grep -q "^tool.sh owner/src tool.sh $(git -C "$up" rev-parse HEAD) " "$lock" ||
+  fail "the lock does not record the commit tool.sh now comes from:"$'\n'"$(cat "$lock")"
+[ -x "$down/tool.sh" ] || fail "update dropped the executable bit"
+
+# Nothing moved, so nothing changes — not even the lock
+cp "$lock" "$work/lock.before"
+vsync update -u "$base" >/dev/null || fail "update failed with nothing to do"
+cmp -s "$work/lock.before" "$lock" || fail "update rewrote the lock when no source had moved"
+# Nor when the source moved without touching what is vendored: a line is the commit its
+# content was taken at, so a source's unrelated commits must not reach the lock
+printf 'unrelated\n' >"$up/README"
+git -C "$up" add README
+git -C "$up" commit -qm unrelated
+vsync update -u "$base" >/dev/null || fail "update failed on an unrelated commit in the source"
+cmp -s "$work/lock.before" "$lock" || fail "update rewrote the lock for a source commit that touched nothing vendored"
+
+# A vendored directory follows its source both ways
+git -C "$up" rm -q data/b.txt
+printf 'c\n' >"$up/data/c.txt"
+git -C "$up" add -A
+git -C "$up" commit -qm three
+vsync update -u "$base" >/dev/null || fail "update failed on a directory whose source changed"
+[ ! -e "$down/data/b.txt" ] || fail "a file deleted from a vendored directory's source stayed here"
+[ -f "$down/data/c.txt" ] || fail "a file added to a vendored directory's source never arrived"
+git -C "$down" add -A
+git -C "$down" commit -qm synced
+
+# An edit in place is named by check, and update refuses to run over it
+printf 'edited here\n' >>"$down/tool.sh"
+if out=$(vsync check 2>&1); then fail "check passed a copy edited in place"; fi
+grep -q 'tool.sh' <<<"$out" || fail "check went red without naming the edited copy:"$'\n'"$out"
+if vsync update -u "$base" >/dev/null 2>&1; then fail "update ran over a copy edited in place"; fi
+grep -q 'edited here' "$down/tool.sh" || fail "update overwrote the edit it should have refused"
+git -C "$down" checkout -q -- tool.sh
+printf 'stray\n' >"$down/data/stray.txt"
+if out=$(vsync check 2>&1); then fail "check passed a vendored directory with a file added in place"; fi
+grep -q 'data/' <<<"$out" || fail "check went red without naming the edited directory:"$'\n'"$out"
+rm -f "$down/data/stray.txt"
+vsync check >/dev/null || fail "check stayed red after the edits were put back"
+
+# A workflow file only as a manual line: the cascade's bot cannot push one
+if vsync add -u "$base" .github/workflows/flow.yml owner/src flow.yml >/dev/null 2>&1; then
+  fail "add took a workflow file without --manual, which the cascade's bot could never update"
+fi
+vsync add --manual -u "$base" .github/workflows/flow.yml owner/src flow.yml >/dev/null ||
+  fail "add --manual could not take a workflow file"
+printf 'on: [push]\n' >"$up/flow.yml"
+git -C "$up" commit -qam four
+vsync update -u "$base" >/dev/null || fail "update failed beside a manual line"
+grep -qx 'on: push' "$down/.github/workflows/flow.yml" || fail "update without --manual touched a manual line"
+vsync update --manual -u "$base" >/dev/null || fail "update --manual failed"
+grep -qxF 'on: [push]' "$down/.github/workflows/flow.yml" || fail "update --manual did not bring a manual line"
+
+# vendor-sync.sh vendors itself, so an update rewrites the very script bash is executing.
+# bash reads a script as it runs, so a copy rewritten in place makes the running update
+# carry on from its old offset into whatever the new text holds there; a longer header
+# in the new version is enough. The copy has to be replaced, not overwritten
+cp templates/vendor-sync.sh "$up/vendor-sync.sh"
+git -C "$up" add vendor-sync.sh
+git -C "$up" commit -qm "vendor-sync itself"
+vsync add -u "$base" vendor-sync.sh owner/src vendor-sync.sh >/dev/null ||
+  fail "vendor-sync add could not take vendor-sync.sh itself"
+{
+  head -n 1 templates/vendor-sync.sh
+  for i in $(seq 1 200); do printf '# a newer header, line %s, long enough to move every offset below it\n' "$i"; done
+  tail -n +2 templates/vendor-sync.sh
+} >"$up/vendor-sync.sh"
+git -C "$up" commit -qam "a longer vendor-sync"
+out=$(vsync update -u "$base" 2>&1) ||
+  fail "update of vendor-sync.sh by itself failed:"$'\n'"$out"
+[ "$(printf '%s\n' "$out" | grep -c '^vendor-sync: .* taken anew$')" -eq 1 ] ||
+  fail "update of vendor-sync.sh by itself did not finish exactly once:"$'\n'"$out"
+cmp -s "$up/vendor-sync.sh" "$down/vendor-sync.sh" || fail "update left vendor-sync.sh different from its source"
+vsync check >/dev/null || fail "check rejected vendor-sync.sh after it updated itself"
 
 echo "== the secret gate catches every shape it claims, and is quiet on itself"
 # The template is exercised end to end, in a throwaway repository, rather than by

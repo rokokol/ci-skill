@@ -7,11 +7,12 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 ### Added
 
 - a section in `check-templates.sh` that reads the subcommands from `ci.sh`'s own dispatch and fails when the README's table, `references/ops.md`'s table or either layout line leaves one out, so the omission below cannot recur in silence. It proves itself on every run against a copy of `ops.md` with its `log` row removed, and it refuses to pass when it reads no subcommand at all — which is how its first draft, matching the wrong indentation, was caught before it could pass on nothing
+- **`templates/vendor-sync.sh` and `templates/github/workflows/vendor-sync.yml`**: the vendoring cascade. A file another repository needs stays there as a verbatim copy, listed in `.github/vendor.lock` with the commit it came from and the blob it must still be; `check` is offline and fails the gate on a copy edited in place, `update` takes each source's current content, and the weekly workflow lands it through the repository's own build workflow only on green. Workflow files are taken with `--manual`, because the token a workflow runs with cannot push one. The tool vendors itself, and replaces a copy rather than rewriting it, since bash would carry on into the new text of a script rewritten while it runs. `references/bump-cascade.md` describes it once, in "Vendored files", and every file that travels says so in its header
 
 ### Changed
 
 - the description sat at exactly the 1024 characters an agent reads, so any trigger added to it would have been cut; a trigger listed twice is gone, leaving room
-
+- `check-pins.sh` and `check-skill.sh` are no longer "copied verbatim": their headers, `SKILL.md`, the readme, `references/pinning.md` and `references/checks.md` send a repository to the vendoring cascade instead
 ### Fixed
 
 - **`ci.sh log`, added on 2026-09-08, was missing from every place that lists the harness**: the layout in `SKILL.md`, the README's table and layout, and the table in `references/ops.md`, whose introduction called the list "the same six questions". An agent learning the harness from its documentation had no way to find it

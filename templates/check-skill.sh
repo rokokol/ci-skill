@@ -13,8 +13,9 @@
 # Exit 1 with `check-skill: <what>` on the first finding, 2 on a usage error.
 #
 # Nothing here reaches the network. Needs bash 3.2 and POSIX tools only, so it runs on a
-# macOS runner unchanged. Copy it verbatim — it has no repo-specific part — and call it
-# from the repository's own gate.
+# macOS runner unchanged. It has no repo-specific part: another repository takes it through
+# the vendoring cascade (references/bump-cascade.md in https://github.com/rokokol/ci-skill),
+# never edits its copy in place, and calls it from its own gate.
 set -euo pipefail
 
 # The whole header, however long it grows: up to the first line that is not a comment

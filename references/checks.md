@@ -17,7 +17,7 @@ Asking whether a suite would notice the code breaking — and the harness that a
 
 ## Checkers worth copying
 
-All live in [`templates/`](../templates/). `no-secrets.sh` is a skeleton, and carries the warning in its header: **copying it proves nothing**. The mechanism is reusable; the knowledge is not, and the property that makes it worth running is local — the copy must have been falsified in its own repository. `check-pins.sh` and `check-skill.sh` have no local knowledge to add, so they are copied verbatim — and each falsifies itself on every run, which is the only way a file that travels alone can stay proven. The pin guard is described where its rule is, in [pinning.md](pinning.md); the others below
+All live in [`templates/`](../templates/). `no-secrets.sh` is a skeleton, and carries the warning in its header: **copying it proves nothing**. The mechanism is reusable; the knowledge is not, and the property that makes it worth running is local — the copy must have been falsified in its own repository. `check-pins.sh` and `check-skill.sh` have no local knowledge to add, so another repository takes them through the [vendoring cascade](bump-cascade.md#vendored-files) rather than by hand — and each falsifies itself on every run, which is the only way a file that travels alone can stay proven. The pin guard is described where its rule is, in [pinning.md](pinning.md); the others below
 
 ### `no-secrets.sh` — the gate at the tracked-file boundary
 
