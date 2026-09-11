@@ -210,8 +210,10 @@ function claim(text, strict,   name, rest, n, args, na, a, toks, nt, i, t, last)
     return
   }
   if (rest !~ /^[ \t]/) return
-  gsub(/"[^"]*"/, "Q", rest)
-  gsub(sq "[^" sq "]*" sq, "Q", rest)
+  # A quoted value becomes a byte no rule below reads: not a word, so not a flag, and not
+  # a capital, so not a placeholder that would make the word before it an argument
+  gsub(/"[^"]*"/, "\001", rest)
+  gsub(sq "[^" sq "]*" sq, "\001", rest)
   nt = split(trim(rest), toks, /[ \t]+/)
   for (i = 1; i <= nt; i++) {
     t = toks[i]
@@ -396,6 +398,9 @@ if [[ -n "$first_prefix" ]]; then
   plant 1 "$name takes no $wrong" '```' "\$ $first_prefix$name $wrong=v" '```'
   plant 1 "$name takes no $wrong" "\`$first_prefix$placeholder $wrong=v\`"
   plant 0 "an allowed line is not read" "\`$first_prefix$ghost\` <!-- check-interface: allow -->"
+  if ((! flags)); then
+    plant 0 "a word before a quoted value is prose, not an argument" "\`$first_prefix$name and not \"$wrong\"\`"
+  fi
   if ((anywhere)); then
     plant 1 "$ghost is not a declared name" "a sentence that calls $first_prefix$ghost in passing"
   else
