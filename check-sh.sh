@@ -317,6 +317,7 @@ has_token() { # has_token TOKEN <<<TEXT -> 0 when TEXT holds TOKEN as a whole to
 
 subs=()
 flags=() # "SUB<TAB>FLAG" per line, SUB is - for a global flag
+open_set=0
 {
   header=$(sed -n '2,/^[^#]/p' "$script" | sed '$d')
   claims_32=0
@@ -334,14 +335,17 @@ flags=() # "SUB<TAB>FLAG" per line, SUB is - for a global flag
       subs+=("$arm")
     done < <(printf '%s\n' "$dispatch" |
       sed -n 's/^  \([a-z][a-z0-9-]*\( *| *[a-z][a-z0-9-]*\)*\)).*/\1/p' | tr '|' '\n' | tr -d ' ')
-    # The help arm is spelled one way, so a reader and a completion can count on all three
-    printf '%s\n' "$dispatch" | grep -qE '^  -h \| --help \| help\)' ||
-      finding "$name's dispatcher has no -h | --help | help arm"
-    # The *) arm refuses, and a refusal is not output: a usage printed there goes to stderr
+    # The *) arm refuses, and a refusal is not output: a usage printed there goes to stderr.
+    # A wrapper's *) arm passes the word through to another tool instead, and says so with
+    # the comment `# pass-through` inside the arm; then the subcommand set is open — the
+    # help and the docs may name commands the dispatcher never spells — and only the flags
+    # stay closed. A declaration rather than a guess: whether an arm refuses is decided by
+    # the helper it calls, which no grep can see
     refusal=$(printf '%s\n' "$dispatch" | sed -n '/^  \([^)]* | \)\{0,1\}\*)/,/;;/p')
     [[ -n "$refusal" ]] || finding "$name's dispatcher has no *) arm to refuse an unknown subcommand"
     [[ -z "$refusal" ]] || ! printf '%s\n' "$refusal" | grep -E '(^|[^[:alnum:]_])usage([^[:alnum:]_]|$)' | grep -qv '>&2' ||
       finding "$name's *) arm prints its usage to stdout rather than stderr"
+    ! printf '%s\n' "$refusal" | grep -q '# pass-through' || open_set=1
   fi
 
   # The flags: every `-x | --long)` arm, attributed to the cmd_<sub>() function it sits
@@ -368,11 +372,20 @@ flags=() # "SUB<TAB>FLAG" per line, SUB is - for a global flag
     }' "$code")
   ((${#subs[@]} + ${#flags[@]} > 0)) ||
     die "nothing to check in $script: no case \"\$cmd\" dispatcher and no flag arms — see references/shape.md"
+  # The help arm is spelled one way, so a reader and a completion can count on all three.
+  # A wrapper passes `help` through to the tool behind it, whose help is the better one,
+  # so it may answer -h and --help as flags before the dispatcher instead
+  if [[ -n "$dispatch" ]] && ! printf '%s\n' "$dispatch" | grep -qE '^  -h \| --help \| help\)'; then
+    if ! { ((open_set)) && printf '%s\n' "${flags[@]+"${flags[@]}"}" | grep -qx -- $'-\t--help'; }; then
+      finding "$name's dispatcher has no -h | --help | help arm"
+    fi
+  fi
 }
 
-known_sub() { # known_sub WORD -> 0 when the dispatcher has it, or it is the help
+known_sub() { # known_sub WORD -> 0 when the dispatcher has it, or it is the help, or the set is open
   local s
   [[ "$1" != help ]] || return 0
+  ((open_set == 0)) || return 0
   for s in "${subs[@]+"${subs[@]}"}"; do [[ "$s" == "$1" ]] && return 0; done
   return 1
 }
@@ -436,8 +449,9 @@ fi
   ! grep -q '^help_codes() {' "$script" || corpus="$corpus"$'\n'"$("$BASH" "$script" help codes 2>/dev/null || :)"
 
   # help ⇐ dispatcher, and back
+  # `NAME sub`, with any bracketed global options between — `NAME [--vault V] sub`
   for s in "${subs[@]+"${subs[@]}"}"; do
-    printf '%s\n' "$help" | grep -qF -- "$name $s" ||
+    printf '%s\n' "$help" | grep -qE -- "(^|[^[:alnum:]_./-])${name_re}( \[[^]]*\])* ${s}([^[:alnum:]_-]|\$)" ||
       finding "$name dispatches '$s' but its help never mentions '$name $s'"
   done
   while IFS= read -r s; do
@@ -637,6 +651,22 @@ c=$(copy helper-case)
 plant "$c" 'HERE=' 'helper() { case "$1" in --inner) : ;; esac; }'
 # shellcheck disable=SC2046
 nested "$c" $(full "$c") >/dev/null 2>&1 || die "self-test: a case in a helper function was read as a parser"
+
+c=$(copy wrapper)
+# A dispatcher whose *) arm passes the word through is a wrapper, and a wrapper's help may
+# name the commands of the tool behind it
+awk '/^  \*\)$/ { print "  *) printf '"'"'passing %s through\\n'"'"' \"$cmd\" ;; # pass-through"; skip = 1; next } skip && /^    ;;$/ { skip = 0; next } skip { next } { print }' "$c/script.sh" >"$c/s" && mv "$c/s" "$c/script.sh"
+plant "$c" '#   script.sh stop' '#   script.sh anything                       passed through to the tool behind'
+# shellcheck disable=SC2016 # the backticks are markdown, not a command substitution
+printf '\nAlso `script.sh anything` goes through\n' >>"$c/README.md"
+# shellcheck disable=SC2046
+nested "$c" $(full "$c") >/dev/null 2>&1 || die "self-test: a wrapper's help naming a passed-through command was rejected:"$'\n'"$(nested "$c" $(full "$c") 2>&1 || :)"
+
+c=$(copy bracketed)
+# A global option in brackets between the name and the subcommand is still `NAME sub`
+swap "$c" '#   script.sh stop' '#   script.sh [--quiet] stop                 stop doing it'
+# shellcheck disable=SC2046
+nested "$c" $(full "$c") >/dev/null 2>&1 || die "self-test: a help spelling 'script.sh [--quiet] stop' was read as not naming stop"
 
 c=$(copy unclaimed)
 # The proxy is gated on the claim: a script that does not claim 3.2 may use bash 4
