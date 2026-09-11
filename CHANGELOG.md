@@ -6,6 +6,8 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ### Changed
 
+- `references/ops.md` no longer restates the subcommand table that `ci.sh help` and the readme already carry, and sends the reader to the help; the defaults only that table stated — which run `failed` and `log` take without an id, and when `log` needs no job — are in the help now, and the gate holds `ops.md` to the dispatcher backwards only
+- `ci.sh dispatch` without a workflow exits 2 with its own message; a `${1:?}` there still answered with 1 and bash's text after the rest of the script had moved to 2
 - `ci.sh` exits 2 on a usage error, like every other script in the family, where it exited 1; its help is the whole header, extracted up to the first line that is not a comment, where a fixed line range had it printing `set -euo pipefail` as its last line; `-R` is written with its long form `--repo` in the help, which never mentioned it; and the help no longer needs `gh` or `jq` to be printed
 - the gate holds `ci.sh` and the travelling checkers to their own help with the [bash-best-practices](https://github.com/rokokol/bash-best-practices-skill) skill's `check-sh.sh`, vendored: every subcommand, flag and exit code in the help, every `ci.sh …` mention in `README.md`, `references/ops.md` and `SKILL.md` a real one, both ways. It replaces the awk over the dispatcher and the last-line probe that lived here, and it found the three drifts above on its first run
 - this repository takes its own `vendor-sync.sh` and `vendor-sync.yml` through the cascade it hands out, with a `.github/vendor.lock` like any other repository's, so the copy that vendors `check-sh.sh` here is kept current by the same mechanism

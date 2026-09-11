@@ -26,7 +26,7 @@ Born from the [huix-standard](https://github.com/rokokol/huix-standard-skill) fa
 
 ## The harness
 
-[`ci.sh`](ci.sh) beside this file is the operational half — one command per everyday operation, from the badge row in a terminal to the whole log of a single job. Use it instead of hand-rolling `gh run` invocations; [references/ops.md](references/ops.md) lists every subcommand, the push ritual it serves, and the raw `gh --json/--jq` recipes it is built from
+[`ci.sh`](ci.sh) beside this file is the operational half — one command per everyday operation, from the badge row in a terminal to the whole log of a single job. Use it instead of hand-rolling `gh run` invocations; `ci.sh help` lists every subcommand, and [references/ops.md](references/ops.md) is the push ritual they serve and the raw `gh --json/--jq` recipes they are built from
 
 ## Layout
 

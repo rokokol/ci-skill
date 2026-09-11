@@ -8,9 +8,11 @@
 #   ci.sh watch               follow the runs of the current HEAD until all conclude
 #   ci.sh failed [RUN_ID]     the steps of a run that went wrong — failed, cancelled or
 #                             timed out alike — then the log lines around the actual
-#                             error, not the cleanup noise a raw log tail shows
+#                             error, not the cleanup noise a raw log tail shows (the
+#                             newest of the last 30 runs that went wrong if omitted)
 #   ci.sh log [RUN_ID] [JOB]  the whole log of one job, whatever it concluded: the first
-#                             green run of a new job is the one worth reading
+#                             green run of a new job is the one worth reading (the
+#                             latest run if omitted; JOB only when the run has several)
 #   ci.sh dispatch WORKFLOW [REF]
 #                             fire a workflow_dispatch and follow it
 #   ci.sh rerun [RUN_ID]      rerun the failed jobs of a run (latest failed run if omitted)
@@ -167,7 +169,9 @@ case "$cmd" in
     ;;
 
   dispatch)
-    wf="${1:?workflow file or name required}"
+    # Not ${1:?}: that exits 1 with bash's own message, and a usage error is 2
+    (($# >= 1)) || die "dispatch needs a workflow file or name"
+    wf="$1"
     ref="${2:-}"
     if [[ -n "$ref" ]]; then
       gh workflow run "${REPO_ARGS[@]+"${REPO_ARGS[@]}"}" "$wf" --ref "$ref"
