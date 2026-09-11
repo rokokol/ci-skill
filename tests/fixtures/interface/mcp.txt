@@ -1,0 +1,9 @@
+download_with_fallback paper_id
+download_with_fallback source
+list_sources
+read_arxiv_paper paper_id
+read_arxiv_paper save_path
+read_pubmed_paper paper_id
+read_pubmed_paper save_path
+search_papers max_results
+search_papers query

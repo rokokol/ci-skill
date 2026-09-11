@@ -1,0 +1,7 @@
+* vault
+backlinks file
+backlinks total
+help <command>
+search format
+search limit
+search query

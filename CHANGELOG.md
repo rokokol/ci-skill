@@ -4,6 +4,10 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ## 2026-09-11
 
+### Added
+
+- **`templates/check-interface.sh`**: a travelling checker that holds a skill's documents to the interface a foreign tool declares — a CLI's commands and parameters as its own help lists them, an MCP server's tools and arguments as its handshake advertises them — so a renamed command or argument reddens the gate instead of leaving the documents teaching a call that is gone. The calling gate makes the declared list in one line; the checker reads claims only in notations the document marks (a prefix, call notation, a span wholly a name), holds arguments per name, expands a placeholder such as `read_<source>_paper` into every name it fits, refuses an empty list or documents with no claim, and plants its own defects on every run in documents built from the list it was given. Generalised from the papers skill's `doc-args.py`; `references/checks.md` describes it
+
 ### Changed
 
 - `references/ops.md` no longer restates the subcommand table that `ci.sh help` and the readme already carry, and sends the reader to the help; the defaults only that table stated — which run `failed` and `log` take without an id, and when `log` needs no job — are in the help now, and the gate holds `ops.md` to the dispatcher backwards only

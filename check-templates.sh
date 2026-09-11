@@ -16,7 +16,7 @@ fail() {
 }
 
 echo "== the scripts lint themselves, templates included"
-scripts=(check-templates.sh ci.sh vendor-sync.sh check-sh.sh templates/no-secrets.sh templates/check-skill.sh templates/check-pins.sh templates/vendor-sync.sh tests/fixtures/planted-secrets.sh)
+scripts=(check-templates.sh ci.sh vendor-sync.sh check-sh.sh templates/no-secrets.sh templates/check-skill.sh templates/check-pins.sh templates/check-interface.sh templates/vendor-sync.sh tests/fixtures/planted-secrets.sh)
 shellcheck "${scripts[@]}"
 shfmt -d -i 2 -ci "${scripts[@]}"
 
@@ -101,9 +101,31 @@ out=$(templates/check-skill.sh -n 2>&1) && status=0 || status=$?
   fail "check-skill.sh -n with no name exited $status, where its header promises 2 for a usage error:"$'\n'"$out"
 grep -q '^check-skill: -n needs a name' <<<"$out" ||
   fail "check-skill.sh -n with no name did not say what is missing:"$'\n'"$out"
-for checker in templates/check-skill.sh templates/check-pins.sh templates/vendor-sync.sh; do
+for checker in templates/check-skill.sh templates/check-pins.sh templates/check-interface.sh templates/vendor-sync.sh; do
   ./check-sh.sh "$checker"
 done
+
+echo "== check-interface.sh holds documents to a declared interface, in both notations it reads"
+# Each run plants its own defects on documents built from the declared list, with the same
+# flags, so the two fixtures are the two shapes a consumer calls it in: a CLI whose flags
+# are bare words, and an MCP server whose tools take named arguments. What is left here is
+# what a planted document cannot show: that a call the checker cannot serve is refused
+fx=tests/fixtures/interface
+templates/check-interface.sh -d "$fx/cli.txt" -p 'tool ' -b -f "$fx/cli.md"
+templates/check-interface.sh -d "$fx/mcp.txt" -p mcp__srv__ -a -c -s '(search|read|download|list)_[A-Za-z_<>]+' "$fx/mcp.md"
+refused() { # refused WHY ARG... — the checker must exit 2 on these arguments
+  local why=$1 status=0
+  shift
+  templates/check-interface.sh "$@" >/dev/null 2>&1 || status=$?
+  [ "$status" -eq 2 ] || fail "check-interface.sh exited $status on $why, where its header promises 2"
+}
+refused "no declared list" -p 'tool ' "$fx/cli.md"
+: >"$work/empty.txt"
+refused "an empty declared list" -d "$work/empty.txt" -p 'tool ' "$fx/cli.md"
+refused "-f with no -p" -d "$fx/cli.txt" -b -f "$fx/cli.md"
+refused "-a with no -p" -d "$fx/cli.txt" -b -a "$fx/cli.md"
+refused "no notation" -d "$fx/cli.txt" "$fx/cli.md"
+refused "documents with no claim" -d "$fx/cli.txt" -p 'nothing-opens-with-this ' "$fx/cli.md"
 # And the vendored copies are the blobs the lock records, this repository's own template
 # among them: the cascade that keeps every other repository's copy current starts here
 ./vendor-sync.sh check
