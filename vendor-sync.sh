@@ -48,7 +48,7 @@ usage_error() {
 
 cmd="${1:-}"
 case "$cmd" in
-  -h | --help | help)
+  -h | --help)
     usage
     exit 0
     ;;

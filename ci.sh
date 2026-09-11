@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The CI harness: everyday GitHub Actions operations as one command each. Wraps gh, so
-# auth and repo detection are gh's; every subcommand takes -R owner/repo to aim at
-# another repository, defaulting to the one the current directory belongs to.
+# auth and repo detection are gh's; every subcommand takes -R, --repo owner/repo to aim
+# at another repository, defaulting to the one the current directory belongs to.
 #
 #   ci.sh status              latest run of every workflow — the badge row, in a terminal
 #   ci.sh runs [N]            the N most recent runs (default 10)
@@ -14,17 +14,18 @@
 #   ci.sh dispatch WORKFLOW [REF]
 #                             fire a workflow_dispatch and follow it
 #   ci.sh rerun [RUN_ID]      rerun the failed jobs of a run (latest failed run if omitted)
+#
+# Exit 0 done, 2 on a usage error or without gh and jq; watch, dispatch and rerun pass
+# the run's own conclusion through, nonzero when it failed, as gh reports it.
 set -euo pipefail
 
-usage() { sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+# The whole header, however long it grows: up to the first line that is not a comment
+usage() { sed -n '2,/^[^#]/p' "${BASH_SOURCE[0]}" | sed '$d; s/^# \{0,1\}//'; }
 
-die() {
+die() { # the request itself is wrong, or cannot be served as asked
   printf 'ci.sh: %s\n' "$1" >&2
-  exit 1
+  exit 2
 }
-
-command -v gh >/dev/null || die "needs gh (authenticated: gh auth login)"
-command -v jq >/dev/null || die "needs jq"
 
 # -R owner/repo anywhere in the arguments aims every gh call; gh's own default
 # (the checkout's origin) applies otherwise
@@ -33,7 +34,9 @@ args=()
 while (($#)); do
   case "$1" in
     -R | --repo)
-      REPO_ARGS=(-R "${2:?owner/repo required by $1}")
+      # Not ${2:?}: that exits 1 with bash's own message, and a usage error is 2
+      (($# >= 2)) || die "$1 needs owner/repo"
+      REPO_ARGS=(-R "$2")
       shift 2
       ;;
     *)
@@ -46,6 +49,15 @@ set -- "${args[@]+"${args[@]}"}"
 
 cmd="${1:-status}"
 (($# == 0)) || shift
+
+# The help needs neither tool, and a machine without them still gets to read it
+case "$cmd" in
+  -h | --help | help) ;;
+  *)
+    command -v gh >/dev/null || die "needs gh (authenticated: gh auth login)"
+    command -v jq >/dev/null || die "needs jq"
+    ;;
+esac
 
 run_list() { # run_list N [extra gh args...]
   local limit="$1"
@@ -184,7 +196,8 @@ case "$cmd" in
     ;;
 
   *)
+    printf 'ci.sh: no such subcommand: %s\n\n' "$cmd" >&2
     usage >&2
-    exit 1
+    exit 2
     ;;
 esac

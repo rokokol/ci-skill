@@ -2,6 +2,15 @@
 
 Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The rule lives in the [versioning](https://github.com/rokokol/versioning-skill) skill, which owns what has no version
 
+## 2026-09-11
+
+### Changed
+
+- `ci.sh` exits 2 on a usage error, like every other script in the family, where it exited 1; its help is the whole header, extracted up to the first line that is not a comment, where a fixed line range had it printing `set -euo pipefail` as its last line; `-R` is written with its long form `--repo` in the help, which never mentioned it; and the help no longer needs `gh` or `jq` to be printed
+- the gate holds `ci.sh` and the travelling checkers to their own help with the [bash-best-practices](https://github.com/rokokol/bash-best-practices-skill) skill's `check-sh.sh`, vendored: every subcommand, flag and exit code in the help, every `ci.sh …` mention in `README.md`, `references/ops.md` and `SKILL.md` a real one, both ways. It replaces the awk over the dispatcher and the last-line probe that lived here, and it found the three drifts above on its first run
+- this repository takes its own `vendor-sync.sh` and `vendor-sync.yml` through the cascade it hands out, with a `.github/vendor.lock` like any other repository's, so the copy that vendors `check-sh.sh` here is kept current by the same mechanism
+- `templates/vendor-sync.sh` answers `help` as well as `-h` and `--help`, the arm every script of the family spells the same way
+
 ## 2026-09-10
 
 ### Added

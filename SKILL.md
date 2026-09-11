@@ -36,5 +36,7 @@ ci.sh                the harness: status / runs / watch / failed / log / dispatc
 references/          one spec per piece: workflows, pinning, badges, bump-cascade, checks, ops
 templates/           copyable workflows plus no-secrets.sh, and the travelling check-pins.sh, check-skill.sh and vendor-sync.sh, EXAMPLE markers for repo specifics
 check-templates.sh   actionlint over the templates, self-tested against known-bad fixtures
+check-sh.sh          holds ci.sh and the travelling checkers to their own help, vendored from the bash-best-practices skill
+vendor-sync.sh       this repository's own copy of its template, kept current by the cascade like any other
 tests/fixtures/      the known-bad inputs every check here is proven to catch
 ```
