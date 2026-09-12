@@ -112,6 +112,9 @@ echo "== check-interface.sh holds documents to a declared interface, in both not
 # what a planted document cannot show: that a call the checker cannot serve is refused
 fx=tests/fixtures/interface
 templates/check-interface.sh -d "$fx/cli.txt" -p 'tool ' -b -f "$fx/cli.md"
+# With an earlier declaration: history is gone from the tool and absent from the document,
+# search is still declared, so the run stays green and plants its dropped-name cases
+templates/check-interface.sh -d "$fx/cli.txt" -r "$fx/cli-was.txt" -p 'tool ' -b -f "$fx/cli.md"
 templates/check-interface.sh -d "$fx/mcp.txt" -p mcp__srv__ -a -c -s '(search|read|download|list)_[A-Za-z_<>]+' "$fx/mcp.md"
 refused() { # refused WHY ARG... — the checker must exit 2 on these arguments
   local why=$1 status=0
@@ -120,6 +123,7 @@ refused() { # refused WHY ARG... — the checker must exit 2 on these arguments
   [ "$status" -eq 2 ] || fail "check-interface.sh exited $status on $why, where its header promises 2"
 }
 refused "no declared list" -p 'tool ' "$fx/cli.md"
+refused "an unreadable earlier declaration" -d "$fx/cli.txt" -r "$fx/no-such-file" -p 'tool ' "$fx/cli.md"
 : >"$work/empty.txt"
 refused "an empty declared list" -d "$work/empty.txt" -p 'tool ' "$fx/cli.md"
 refused "-f with no -p" -d "$fx/cli.txt" -b -f "$fx/cli.md"
