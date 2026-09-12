@@ -8,6 +8,11 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 - `check-interface.sh -r FILE` takes the names a tool declared before: one that is no longer declared was renamed or removed, and a claim opening with it is a finding in every notation. A span that merely opens with a declared name had let a renamed command through, since an undeclared first word there is taken for prose; the planted cases now include a dropped name in each notation the run reads
 
+### Changed
+
+- `references/ops.md` names one more wrong observer: in a fork with an `upstream` remote, `gh` and `ci.sh` report on the parent repository without a warning, so a verdict counts only when the run's `headSha` is the local `HEAD`
+- `references/bump-cascade.md` says what "the cascade" means in this skill: the bump→verify→land shape, for a lockfile or a vendored file, and not dependabot, a reusable workflow pinned at `@v1` or a composite action
+
 ## 2026-09-11
 
 ### Added

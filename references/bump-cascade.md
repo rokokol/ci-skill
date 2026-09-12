@@ -23,7 +23,7 @@ Guard rails: `concurrency: <one group>` on the workflow (two runs would push the
 
 Work on the repo during the bump window and the cascade will land a lockfile under your feet — your push comes back rejected. The canon: rebase onto the updated default branch, **re-run the checks on the fresh lock** (the bump can bring a formatter with a changed opinion or a toolchain with changed behavior — the very thing verify caught on its own branch), then push. Never force-push over the bot's commit: it landed on green and is as much the default branch as your work is
 
-The same bump→verify→land (or bump→verify→PR, where review is wanted) shape serves any "the world moved" bot: re-rendering generated assets against an upstream's HEAD, refreshing recorded fixtures from a live site, re-measuring data a repo mirrors. Verify is always the same call; only the bump command changes
+The same bump→verify→land (or bump→verify→PR, where review is wanted) shape serves any "the world moved" bot: re-rendering generated assets against an upstream's HEAD, refreshing recorded fixtures from a live site, re-measuring data a repo mirrors. Verify is always the same call; only the bump command changes. In this skill "the cascade" always means this bump→verify→land shape, for a lockfile or for a vendored file; it is not dependabot, not a reusable workflow pinned at `@v1`, and not a composite action
 
 ## Vendored files
 
