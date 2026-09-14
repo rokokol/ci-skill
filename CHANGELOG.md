@@ -2,6 +2,12 @@
 
 Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The rule lives in the [versioning](https://github.com/rokokol/versioning-skill) skill, which owns what has no version
 
+## 2026-09-14
+
+### Added
+
+- `references/workflows.md`, Token permissions: a job-level `permissions:` block replaces the workflow-level one rather than extending it, one `contents: write` per act, and an action spending the token it is handed, with the first scheduled run after the watched data grows tripping an under-scoped job on `Resource not accessible by integration`
+
 ## 2026-09-12
 
 ### Added

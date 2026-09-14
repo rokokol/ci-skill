@@ -38,6 +38,22 @@ An empty `ref` checks out the triggering commit, so the same lines serve push, P
 - `concurrency: <group>` on any workflow that pushes, so two runs cannot race the same branch
 - Steps that must be able to fail loudly do not hide behind `|| true` or `2>/dev/null`; when a distro or platform legitimately cannot run a check, print a visible `SKIP` with `::notice` and exit 0 — green with a mark beats a lying red or a silent pass
 
+## Token permissions
+
+A job-level `permissions:` block *replaces* the workflow-level block rather than extending it, so `contents: read` is repeated in every job that needs it. A workflow with no `permissions:` block runs on the repository's default token, which grants everything the settings allow — write to contents, issues, pull requests and more
+
+The job that commits, pushes or publishes is the only place in the workflow that carries `contents: write`; in a release workflow that is the publish job, in a bump cascade it is the bump and land jobs while the verify job stays read-only. With one writer per act no second job races the same branch, and `concurrency` is the second belt, not the only one
+
+A third-party action makes its own REST calls with the token, and what those calls need is declared in the action's `README` or `action.yml`, not in the workflow that uses it. A security-audit action run on a schedule files one issue per new advisory besides its check run, so its job needs `issues: write` beside `checks: write` — both visible in the action's own permission contract, and neither guessable from the step's appearance
+
+An under-scoped job does not fail immediately: on `push` and `workflow_dispatch` the same action reports the check run and nothing more, so the missing scope stays invisible while every manual run is green. The first scheduled run after the data the detector watches grows something new is the one that trips, with the step dying on
+
+```
+Resource not accessible by integration
+```
+
+That 403 from the REST create-issue path reads as "the world changed and the detector went red", which is exactly what a drift detector is supposed to do — so an under-scoped token can still lurk behind green runs and surface as a real finding when it finally appears — read the action's declared permissions before wiring it into a workflow, and when a detector that was green goes red on a data change alone, check the token's scopes against what the action does on that trigger before blaming the data
+
 ## The runner is a platform, not a clean machine
 
 A hosted runner is two layers. The platform — the operating system, its libc and its system userland: BSD `date` and `/bin/bash` 3.2 on macOS, GNU coreutils on Ubuntu — is exactly what a user of that system has, and running a repository's gate there is a direct portability check. Such a job prints the version of every tool it relies on, so an image update leaves evidence in the log. The extras GitHub preinstalls on top — compilers, language runtimes, `jq`, `docker`, whatever the image carries this month — are nobody's machine, and these rules follow for them:
