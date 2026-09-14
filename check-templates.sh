@@ -69,14 +69,14 @@ grep -q 'nothing went wrong' <<<"$out" ||
 echo "== ci.sh's help, and every doc that lists the harness, agree with its dispatch"
 # ci.sh's own dispatch is the list. README restates it for readers, and a restated list
 # drifts: `log` shipped and stayed missing from every doc until a review caught it. The
-# check is the bash-best-practices skill's check-sh.sh, vendored: it reads the
-# subcommands, flags and exit codes out of ci.sh, holds the help to them, and holds the
-# docs' `ci.sh …` mentions to the dispatcher — README and SKILL.md in both directions,
-# ops.md backwards only, since it sends the reader to the help instead of restating it —
+# check is check-sh.sh from https://github.com/rokokol/bash-best-practices-skill, vendored:
+# it reads the subcommands, flags and exit codes out of ci.sh, holds the help to them, and holds the
+# docs' `ci.sh …` mentions to the dispatcher — README in both directions, SKILL.md and
+# ops.md backwards only, since they send the reader to the help instead of restating it —
 # and plants its own defects on every run, so nothing here has to prove it can fail. On
 # its first run it found the help printing a fixed line range, `--repo` unmentioned and
 # exit 1 unlisted
-./check-sh.sh -n ci.sh -d README.md -m references/ops.md -d SKILL.md ci.sh
+./check-sh.sh -n ci.sh -d README.md -m references/ops.md -m SKILL.md ci.sh
 
 echo "== this repository passes the skill gate it hands out"
 # check-skill.sh proves its own checks able to fail on every run, so running it here is

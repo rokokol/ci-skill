@@ -17,8 +17,6 @@ A green pipeline is worth exactly as much as the question it answers. A check th
 
 It teaches an agent to write and review CI: what may gate a pull request and what has to stay a weekly drift detector, why every binary a job runs comes from the repo's own lockfile, how dependency bumps land themselves without a human babysitting them, how a readme earns one honest badge per statement, and why a checker that has never been red is a decoration
 
-Extracted from **[huix-standard](https://github.com/rokokol/huix-standard-skill)**, where every rule below was paid for by a real red run — this is the provider-general half, so nothing here assumes Nix or any language, though the templates are GitHub Actions
-
 ## Contents
 
 - [Install](#install)
@@ -56,8 +54,8 @@ Then ask Claude Code to write, review or check CI, push to a repository that has
 | **[Bumps land themselves, on green](references/bump-cascade.md)** | A weekly bump→verify→land cascade: bump onto a dated branch, verify by calling the build workflow against it, fast-forward and delete only on green — red leaves the branch standing for a human |
 | **[A file that travels is vendored](references/bump-cascade.md#vendored-files)** | A checker another repository needs is a verbatim copy there, listed in a lock with the commit it came from and the blob it must still be. The gate refuses a copy edited in place, and a weekly cascade of the same shape takes each source's newer content, so a fix made once reaches every copy |
 | **[One badge per statement](references/badges.md)** | A status badge is per workflow *file*, so anything deserving its own badge gets a thin wrapper delegating to one reusable job. The wrappers differ by name and input; the logic lives once |
-| **[Every check is proven able to fail](references/checks.md)** | A new check runs red first — against the pre-fix state or a deliberately broken fixture. Checkers ship self-tests against known-bad inputs, and assertions on generated text match whole lines, not substrings. The same question about a *test suite* belongs to the [tests](https://github.com/rokokol/tests-skill) skill |
-| **[One source of truth per list](references/checks.md)** | Lint file lists, tool sets, version numbers — each lives in exactly one place the others read. Duplicated lists drift, and drifted lists lie. Where the version lives, and what a changelog looks like with or without one, belongs to the [versioning](https://github.com/rokokol/versioning-skill) skill |
+| **[Every check is proven able to fail](references/checks.md)** | A new check runs red first against the pre-fix state or a deliberately broken fixture. Checkers exercise known-bad inputs, and assertions on generated text match whole lines, not substrings |
+| **[One source of truth per list](references/checks.md)** | Lint file lists, tool sets and version numbers each live in exactly one place the others read. Duplicated lists drift, and drifted lists lie |
 | **Least privilege, bounded time** | `permissions: contents: read` at every workflow's top, widened per job only where a job writes; `timeout-minutes` on anything that talks to the network or can wait for input; `concurrency` on anything that pushes |
 | **[A push is not done until its runs conclude](references/ops.md)** | Run the gate locally with the workflow's own command first, push, then `ci.sh watch` to a verdict — and report the verdict, not the push. Red means `ci.sh failed` and a fix; a rerun is for an external cause that has been named |
 
@@ -99,8 +97,6 @@ vendor-sync.sh         keep vendored copies byte-equal to their source, and refu
 
 > [!IMPORTANT]
 > Copying the secret gate proves nothing. The mechanism travels, the knowledge does not — a copy is worth running only once it has been falsified **in its own repository**: break what it watches, see red, put it back
-
-Asking the same question of a *test suite* — would it notice if the code broke — is the [tests](https://github.com/rokokol/tests-skill) skill's subject, and its `t.sh falsify` lives there
 
 ## Tests
 
