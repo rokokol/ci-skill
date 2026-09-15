@@ -38,10 +38,10 @@
 #              opens a comment. An entry that excuses nothing is itself a finding
 #
 # An argument is read as `key=value`, as `key VALUE` where VALUE is an upper-case or
-# <angled> placeholder, and with -f as a bare word after a prefix. A claim ends at a shell operator, at
-# the end of its span or line, or after a word ending in `.` or `;`. A name may hold a
-# placeholder, <source> or SOURCE, which stands for every declared name it fits, and each
-# of those must take the argument.
+# <angled> placeholder, and with -f as a bare word after a prefix. A claim ends at a shell
+# operator, at the end of its span or line, or after a word ending in `.` or `;`. A name
+# may hold a placeholder, <source> or SOURCE, which stands for every declared name it
+# fits, and each of those must take the argument.
 #
 # The findings, by the id each one carries:
 #   undeclared-name  a claim opens with a name the tool does not declare, or with a
@@ -55,11 +55,11 @@
 # per finding, 2 on a usage error, an unreadable file, an -x entry that is not
 # `ID PATH [TEXT]` or names an id no excusable finding carries, a declared list that names
 # nothing, or documents that make no claim at all, so a notation that stopped matching is
-# not read as agreement. Nothing here reaches the network. Needs bash 3.2 and POSIX tools only, so it
-# runs on a macOS runner unchanged. It has no repo-specific part: another repository
-# takes it through the vendoring cascade (references/bump-cascade.md in
-# https://github.com/rokokol/ci-skill), never edits its copy in place, and calls it from
-# its own gate.
+# not read as agreement. Nothing here reaches the network.
+# Needs bash 3.2 and POSIX tools only, so it runs on a macOS runner unchanged. It has no
+# repo-specific part: another repository takes it through the vendoring cascade
+# (references/bump-cascade.md in https://github.com/rokokol/ci-skill), never edits its
+# copy in place, and calls it from its own gate.
 set -euo pipefail
 
 # The whole header, however long it grows: up to the first line that is not a comment
