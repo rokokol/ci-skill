@@ -7,6 +7,6 @@ $ tool backlinks file="My Note" total | head -n 3
 $ tool help search
 ```
 
-A misspelt parameter is ignored in silence: `tool backlinks fil=Garden total` answers for the open file <!-- check-interface: allow -->
+A misspelt parameter is ignored in silence: `tool backlinks fil=Garden total` answers for the open file
 
 `graph related` is some other tool's command, and `tags agree with the count` is output, not a call

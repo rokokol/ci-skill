@@ -10,6 +10,7 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ### Changed
 
+- `check-interface.sh` takes the excuses for the wrong calls a document shows on purpose from a file named by `-x`, one `ID PATH [TEXT]` entry per line, and no longer reads a `check-interface: allow` marker on the line, which sat in the runtime an agent loads on every invocation. Each finding carries its id, `FILE:LINE: ID: what`, and an entry that excuses nothing is the finding `stale-allow`. A consumer moves its markers into `check-interface.allow` beside the checker and passes `-x check-interface.allow` in the commit that takes this revision
 - this repository takes `check-skill.sh` through the cascade like every other consumer, and runs it on its own docs; the checker reports the rules a skill can break without breaking as warnings on stdout, the exit code unchanged
 
 ## 2026-09-14

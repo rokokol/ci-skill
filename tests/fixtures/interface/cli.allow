@@ -1,0 +1,2 @@
+# The typo is the lesson of the line: an unknown parameter is ignored in silence
+undeclared-arg tests/fixtures/interface/cli.md fil=Garden
