@@ -2,6 +2,16 @@
 
 Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The rule lives in the [versioning](https://github.com/rokokol/versioning-skill) skill, which owns what has no version
 
+## 2026-09-15
+
+### Removed
+
+- `templates/check-skill.sh`: the gate a skill repository needs lives in the [skill-authoring](https://github.com/rokokol/skill-authoring-skill) skill now, beside the rules it checks, and every consumer's `.github/vendor.lock` names that repository as its source; the section describing it in `references/checks.md` went with it
+
+### Changed
+
+- this repository takes `check-skill.sh` through the cascade like every other consumer, and runs it on its own docs; the checker reports the rules a skill can break without breaking as warnings on stdout, the exit code unchanged
+
 ## 2026-09-14
 
 ### Added

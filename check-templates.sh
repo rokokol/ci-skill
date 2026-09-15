@@ -16,7 +16,7 @@ fail() {
 }
 
 echo "== the scripts lint themselves, templates included"
-scripts=(check-templates.sh ci.sh vendor-sync.sh check-sh.sh templates/no-secrets.sh templates/check-skill.sh templates/check-pins.sh templates/check-interface.sh templates/vendor-sync.sh tests/fixtures/planted-secrets.sh)
+scripts=(check-templates.sh ci.sh vendor-sync.sh check-sh.sh check-skill.sh templates/no-secrets.sh templates/check-pins.sh templates/check-interface.sh templates/vendor-sync.sh tests/fixtures/planted-secrets.sh)
 shellcheck "${scripts[@]}"
 shfmt -d -i 2 -ci "${scripts[@]}"
 
@@ -78,10 +78,11 @@ echo "== ci.sh's help, and every doc that lists the harness, agree with its disp
 # exit 1 unlisted
 ./check-sh.sh -n ci.sh -d README.md -m references/ops.md -m SKILL.md ci.sh
 
-echo "== this repository passes the skill gate it hands out"
-# check-skill.sh proves its own checks able to fail on every run, so running it here is
-# both the gate on this skill's docs and the falsification of the template
-templates/check-skill.sh -n ci .
+echo "== this repository passes the skill gate every skill repository runs"
+# check-skill.sh is vendored from the skill-authoring skill
+# (https://github.com/rokokol/skill-authoring-skill) and proves its own checks able to
+# fail on every run, so nothing here has to
+./check-skill.sh -n ci .
 
 echo "== the pin guard passes this repository's workflows and the templates, proven per shape"
 # check-pins.sh plants every shape it claims to catch and every pinned spelling on each
@@ -94,14 +95,9 @@ echo "== the travelling checkers keep the promises their headers make"
 # fixed line range the header had long outgrown, dropping the exit codes and the allow
 # marker. check-sh.sh holds each header to its flags, its exit codes and its bash 3.2
 # claim, and reads the header's last line by a different means than the scripts use, so a
-# help that stops early cannot agree with it by construction; the usage-error probe stays
-# here, since it is behaviour rather than shape
-out=$(templates/check-skill.sh -n 2>&1) && status=0 || status=$?
-[ "$status" -eq 2 ] ||
-  fail "check-skill.sh -n with no name exited $status, where its header promises 2 for a usage error:"$'\n'"$out"
-grep -q '^check-skill: -n needs a name' <<<"$out" ||
-  fail "check-skill.sh -n with no name did not say what is missing:"$'\n'"$out"
-for checker in templates/check-skill.sh templates/check-pins.sh templates/check-interface.sh templates/vendor-sync.sh; do
+# help that stops early cannot agree with it by construction. The usage-error probe of
+# check-skill.sh lives in its own repository's gate now, with the file
+for checker in templates/check-pins.sh templates/check-interface.sh templates/vendor-sync.sh; do
   ./check-sh.sh "$checker"
 done
 
