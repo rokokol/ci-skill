@@ -1,11 +1,31 @@
 #!/usr/bin/env bash
-# This repository's gate: lints every script and workflow template, then proves each thing
-# it checks able to fail — actionlint on a known-bad workflow, ci.sh against recorded runs,
-# the docs against ci.sh's own dispatch, the travelling checkers, vendor-sync.sh end to end
-# and the secret gate. A checker that cannot go red is not a checker.
-#
-# Needs: actionlint, shellcheck, shfmt — from PATH; CI provides them via nix develop
+# Every check here is proven able to fail — actionlint on a known-bad workflow, ci.sh
+# against recorded runs, the docs against ci.sh's own dispatch, the travelling checkers,
+# vendor-sync.sh end to end and the secret gate — because a checker that cannot go red is
+# not a checker
 set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+check-templates.sh — this repository's gate: lints every script and workflow template
+
+  check-templates.sh
+
+  -h, --help   print this and exit
+
+Needs actionlint, shellcheck and shfmt — from PATH; CI provides them via nix develop
+
+Nothing here reaches the network
+Exit 0 when everything holds, 1 on a finding, 2 on a usage error
+EOF
+}
+
+case "${1:-}" in
+  -h | --help | help)
+    usage
+    exit 0
+    ;;
+esac
 
 HERE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 cd "$HERE"
