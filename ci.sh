@@ -1,28 +1,30 @@
 #!/usr/bin/env bash
-# The CI harness: everyday GitHub Actions operations as one command each. Wraps gh, so
-# auth and repo detection are gh's; every subcommand takes -R, --repo owner/repo to aim
-# at another repository, defaulting to the one the current directory belongs to.
-#
-#   ci.sh status              latest run of every workflow — the badge row, in a terminal
-#   ci.sh runs [N]            the N most recent runs (default 10)
-#   ci.sh watch               follow the runs of the current HEAD until all conclude
-#   ci.sh failed [RUN_ID]     the steps of a run that went wrong — failed, cancelled or
-#                             timed out alike — then the log lines around the actual
-#                             error, not the cleanup noise a raw log tail shows (the
-#                             newest of the last 30 runs that went wrong if omitted)
-#   ci.sh log [RUN_ID] [JOB]  the whole log of one job, whatever it concluded: the first
-#                             green run of a new job is the one worth reading (the
-#                             latest run if omitted; JOB only when the run has several)
-#   ci.sh dispatch WORKFLOW [REF]
-#                             fire a workflow_dispatch and follow it
-#   ci.sh rerun [RUN_ID]      rerun the failed jobs of a run (latest failed run if omitted)
-#
-# Exit 0 done, 2 on a usage error or without gh and jq; watch, dispatch and rerun pass
-# the run's own conclusion through, nonzero when it failed, as gh reports it.
 set -euo pipefail
 
-# The whole header, however long it grows: up to the first line that is not a comment
-usage() { sed -n '2,/^[^#]/p' "${BASH_SOURCE[0]}" | sed '$d; s/^# \{0,1\}//'; }
+usage() {
+  cat <<'EOF'
+The CI harness: everyday GitHub Actions operations as one command each. Wraps gh, so
+auth and repo detection are gh's; every subcommand takes -R, --repo owner/repo to aim
+at another repository, defaulting to the one the current directory belongs to.
+
+  ci.sh status              latest run of every workflow — the badge row, in a terminal
+  ci.sh runs [N]            the N most recent runs (default 10)
+  ci.sh watch               follow the runs of the current HEAD until all conclude
+  ci.sh failed [RUN_ID]     the steps of a run that went wrong — failed, cancelled or
+                            timed out alike — then the log lines around the actual
+                            error, not the cleanup noise a raw log tail shows (the
+                            newest of the last 30 runs that went wrong if omitted)
+  ci.sh log [RUN_ID] [JOB]  the whole log of one job, whatever it concluded: the first
+                            green run of a new job is the one worth reading (the
+                            latest run if omitted; JOB only when the run has several)
+  ci.sh dispatch WORKFLOW [REF]
+                            fire a workflow_dispatch and follow it
+  ci.sh rerun [RUN_ID]      rerun the failed jobs of a run (latest failed run if omitted)
+
+Exit 0 done, 2 on a usage error or without gh and jq; watch, dispatch and rerun pass
+the run's own conclusion through, nonzero when it failed, as gh reports it.
+EOF
+}
 
 die() { # the request itself is wrong, or cannot be served as asked
   printf 'ci.sh: %s\n' "$1" >&2
