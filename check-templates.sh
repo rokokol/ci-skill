@@ -343,7 +343,7 @@ if out=$(cd "$sec" && ./tests/no-secrets.sh 2>&1); then
   rm -rf "$sec"
   fail "the secret gate accepts a tracked path covered by .gitignore"
 fi
-if ! printf '%s\n' "$out" | grep -qxF "secret-gate: tracked path is covered by .gitignore: user/preferences.md"; then
+if ! grep -qxF "secret-gate: tracked path is covered by .gitignore: user/preferences.md" <<<"$out"; then
   printf '%s\n' "$out" >&2
   rm -rf "$sec"
   fail "the secret gate rejects an ignored tracked path without naming it"
@@ -363,7 +363,7 @@ while IFS=$'\t' read -r shape value; do
     rm -rf "$sec"
     fail "a planted secret shape went unnoticed — see tests/fixtures/planted-secrets.sh"
   fi
-  if ! printf '%s\n' "$out" | grep -qxF "secret-gate: $shape"; then
+  if ! grep -qxF "secret-gate: $shape" <<<"$out"; then
     printf '%s\n' "$out" >&2
     rm -rf "$sec"
     fail "the gate went red on ${value:0:24}… but did not call it '$shape' — the pattern for that shape is dead"

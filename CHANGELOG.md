@@ -2,6 +2,12 @@
 
 Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The rule lives in the [versioning](https://github.com/rokokol/versioning-skill) skill, which owns what has no version
 
+## 2026-09-16
+
+### Fixed
+
+- `templates/no-secrets.sh`, `templates/check-interface.sh`, `templates/vendor-sync.sh` and `check-templates.sh` fed a reader that stops early — `grep -q` at its match, `awk` at its `exit` — through a pipe, which kills the producer with SIGPIPE and makes 141 the status of a check that found exactly what it was looking for: the secret gate, the interface checker and the vendoring guard could each fail on a repository with nothing wrong with it. Each text is now read from `<<<` or scanned to the end — the mechanism is measured in the [bash-best-practices](https://github.com/rokokol/bash-best-practices-skill) skill's `references/pitfalls.md`
+
 ## 2026-09-15
 
 ### Removed

@@ -88,11 +88,15 @@ scan "service session cookie" \
 
 # >>> EXAMPLE: whole paths that must never be tracked at all, whatever they hold —
 # the credential store, a private registry, a downloaded database
-if git ls-files | grep -qE '^secrets/'; then
+# The list is read once into a variable and matched with <<<: `git ls-files | grep -q`
+# dies of SIGPIPE when grep finds its match and stops reading, and pipefail makes that
+# death the status of a pipeline that did its job
+tracked_rows=$(printf '%s\n' "${tracked[@]}")
+if grep -qE '^secrets/' <<<"$tracked_rows"; then
   report "a file under secrets/ is tracked; that directory is the credential store"
 fi
 
-if git ls-files | grep -qE '\.db$'; then
+if grep -qE '\.db$' <<<"$tracked_rows"; then
   report "a database is tracked"
 fi
 # <<<
