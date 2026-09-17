@@ -93,8 +93,8 @@ echo "== ci.sh's help, and every doc that lists the harness, agree with its disp
 # it reads the subcommands, flags and exit codes out of ci.sh, holds the help to them, and holds the
 # docs' `ci.sh …` mentions to the dispatcher — README in both directions, SKILL.md and
 # ops.md backwards only, since they send the reader to the help instead of restating it —
-# and plants its own defects on every run, so nothing here has to prove it can fail. On
-# its first run it found the help printing a fixed line range, `--repo` unmentioned and
+# and plants its own defects on this first call, so nothing here has to prove it can fail.
+# On its first run it found the help printing a fixed line range, `--repo` unmentioned and
 # exit 1 unlisted
 ./check-sh.sh -n ci.sh -d README.md -m references/ops.md -m SKILL.md ci.sh
 
@@ -116,9 +116,11 @@ echo "== the travelling checkers keep the promises their headers make"
 # marker. check-sh.sh holds each header to its flags, its exit codes and its bash 3.2
 # claim, and reads the header's last line by a different means than the scripts use, so a
 # help that stops early cannot agree with it by construction. The usage-error probe of
-# check-skill.sh lives in its own repository's gate now, with the file
+# check-skill.sh lives in its own repository's gate now, with the file. The checker proved
+# itself on ci.sh above, and this copy under this bash and these tools has nothing new to
+# prove, so CHECK_SH_NESTED=1 runs the checks alone — 5 s of each 5.1 s call is the self-test
 for checker in templates/check-pins.sh templates/check-interface.sh templates/vendor-sync.sh; do
-  ./check-sh.sh "$checker"
+  CHECK_SH_NESTED=1 ./check-sh.sh "$checker"
 done
 
 echo "== check-interface.sh holds documents to a declared interface, in both notations it reads"
