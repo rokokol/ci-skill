@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# Refuse to ship a secret that slipped past .gitignore.
+# Refuse to ship a secret that slipped past .gitignore
 #
 # .gitignore keeps a file out; this keeps a value out of a file that belongs
 # here. Both are needed: the leak that matters is a token pasted into a config
-# default, a doc or a fixture, not a stray file.
+# default, a doc or a fixture, not a stray file
 #
 # THIS FILE IS A TEMPLATE, AND COPYING IT PROVES NOTHING. The provider shapes
 # below are worth having anywhere; the last two sections are the part that knows
 # what *this* repository's secrets look like, and the gate is worth having only
 # once it has been falsified in its own repo: plant one value of each shape it
 # claims to catch, see it red on every one, remove them. A gate that has only
-# ever printed "clean" may simply be matching nothing.
+# ever printed "clean" may simply be matching nothing
 #
 # Every pattern is written so it cannot match its own source line — a literal
 # prefix is always followed by a bracket expression, which the pattern text
 # itself does not satisfy. Keep that property when adding one, or the gate
-# reddens the repository on the commit that introduces it.
+# reddens the repository on the commit that introduces it
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

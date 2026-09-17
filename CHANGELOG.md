@@ -2,6 +2,12 @@
 
 Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The rule lives in the [versioning](https://github.com/rokokol/versioning-skill) skill, which owns what has no version
 
+## 2026-09-18
+
+### Fixed
+
+- every paragraph of `templates/no-secrets.sh`'s header ended with a full stop, where the house rule leaves the last line bare. It was the one travelling checker the 2026-09-15 round never touched, so all four of its paragraphs still carried one
+
 ## 2026-09-17
 
 ### Fixed
