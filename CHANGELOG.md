@@ -4,6 +4,10 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ## 2026-09-18
 
+### Added
+
+- `references/bump-cascade.md`: a checkout being behind is not the repository being behind, and only a `fetch` tells them apart — `vendor-sync.sh check` holds a copy to the blob its own lock line records rather than to its source, so a checkout that missed two cascade runs passes it and reads as current. A claim that a consumer is stale is made after fetching it
+
 ### Fixed
 
 - every paragraph of `templates/no-secrets.sh`'s header ended with a full stop, where the house rule leaves the last line bare. It was the one travelling checker the 2026-09-15 round never touched, so all four of its paragraphs still carried one
