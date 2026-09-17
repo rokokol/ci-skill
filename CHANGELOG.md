@@ -4,6 +4,10 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ## 2026-09-17
 
+### Fixed
+
+- `templates/vendor-sync.sh`, `templates/check-interface.sh` and `templates/check-pins.sh` ended a paragraph of their help or header with a full stop, where the house rule leaves the last line of a paragraph bare: `vendor-sync.sh` in four places, its bash claim among them, and `check-interface.sh` on the network line a caller acts on. `check-pins.sh` also carried a half-width header line, left when the network sentence was cut from its front and the paragraph was not re-flowed. A consumer takes the new revisions through the cascade's weekly `update`; `check` keeps passing until it does, since a copy is held to the blob its own lock line records and not to its source
+
 ### Added
 
 - `references/bump-cascade.md`: a vendored copy that falsifies itself does so once per run and on every run. Calls after the first in one run, and copies of the gate run to watch a planted defect, set the variable the copy's help names; the first call is never skipped between runs, since its inputs — the consumer's repository, the runner's tools — move without an event to wait for, and a self-test too slow for every push is made faster at its source
