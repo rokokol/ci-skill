@@ -6,6 +6,7 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ### Added
 
+- the dev shell carries `jq`, ahead of the checker that will need it: the vendored `check-sh.sh` is moving off its awk lexer to reading the script it is given as a tree, out of `shfmt --to-json`, with jq flattening that tree into the rows its rules read. It lands before the cascade delivers that checker, so a new copy does not arrive to a missing tool and a red verify
 - `references/bump-cascade.md`: a checkout being behind is not the repository being behind, and only a `fetch` tells them apart — `vendor-sync.sh check` holds a copy to the blob its own lock line records rather than to its source, so a checkout that missed two cascade runs passes it and reads as current. A claim that a consumer is stale is made after fetching it
 
 ### Fixed
