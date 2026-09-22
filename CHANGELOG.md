@@ -2,6 +2,12 @@
 
 Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The rule lives in the [versioning](https://github.com/rokokol/versioning-skill) skill, which owns what has no version
 
+## 2026-09-23
+
+### Added
+
+- `check-comments.allow` at the root excuses the rejected parse on `templates/check-pins.sh`, where the alternation is built with a bare `|` inside a `${x:+word}`. The line is correct bash and tree-sitter's grammar refuses it, which is upstream [tree-sitter-bash#267](https://github.com/tree-sitter/tree-sitter-bash/issues/267); every spelling the grammar does accept either changes the value or moves the bar into a variable declared away from the line that uses it
+
 ## 2026-09-18
 
 ### Added

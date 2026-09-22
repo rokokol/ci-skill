@@ -1,0 +1,8 @@
+# One entry per line: ID PATH [TEXT]. See check-comments.sh --help
+
+# tree-sitter's bash grammar rejects a bare | & ; or > inside a ${x:+word}, reported
+# upstream as tree-sitter/tree-sitter-bash#267. The line is correct bash: measured, every
+# spelling that the grammar accepts either changes the value — "${p:+$p\|}" yields A\|B,
+# because a backslash stays literal inside a double-quoted expansion — or moves the bar
+# into a helper variable declared away from the line that uses it
+unparsed templates/check-pins.sh pattern:+$pattern|
