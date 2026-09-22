@@ -28,14 +28,21 @@ It teaches an agent to write and review CI: what may gate a pull request and wha
 
 ## Install
 
-```sh
-git clone https://github.com/rokokol/ci-skill ~/Projects/ci
-ln -s ~/Projects/ci ~/.claude/skills/ci
+```bash
+npx skills add -g rokokol/ci-skill    # for you, everywhere
+npx skills add rokokol/ci-skill       # for the project you are standing in
 ```
 
-Or straight into the skills directory your agent reads:
+Claude Code also takes it as a plugin:
 
-```sh
+```
+/plugin marketplace add rokokol/skills
+/plugin install ci@rokokol-skills
+```
+
+or by hand — clone into whichever skills directory your agent reads:
+
+```bash
 git clone https://github.com/rokokol/ci-skill ~/.claude/skills/ci
 ```
 
