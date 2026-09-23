@@ -6,3 +6,4 @@ vendor-sync.sh rokokol/ci-skill templates/vendor-sync.sh cfa9fb1ae44f73117feed5f
 .github/workflows/vendor-sync.yml rokokol/ci-skill templates/github/workflows/vendor-sync.yml d55020ab3ca780ea6299336d923b8a3fcb8f491d a5bde77f98d55a43b2c993f4c96a952e0b68010d manual
 check-sh.sh rokokol/bash-best-practices-skill check-sh.sh 0ee5dea3a04bd43f44afee6146dc2f3028fc0cca ece16c8a425f5e4d08e3d7de751b9564048f1e83
 check-skill.sh rokokol/skill-authoring-skill check-skill.sh 399d099461fbba8505d4750a582fab3f25bf83ce 3cb536abc18de6327b77ccf060826e793bf66280
+check-prose.sh rokokol/create-readme-skill check-prose.sh 66820c8be3477c218dabdfcbb5e41e085de40e57 3054ffa2de0990be2164494d734f34f17eda5e2b

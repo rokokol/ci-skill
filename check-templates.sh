@@ -36,7 +36,7 @@ fail() {
 }
 
 echo "== the scripts lint themselves, templates included"
-scripts=(check-templates.sh ci.sh vendor-sync.sh check-sh.sh check-skill.sh templates/no-secrets.sh templates/check-pins.sh templates/check-interface.sh templates/vendor-sync.sh tests/fixtures/planted-secrets.sh)
+scripts=(check-templates.sh ci.sh vendor-sync.sh check-sh.sh check-skill.sh check-prose.sh templates/no-secrets.sh templates/check-pins.sh templates/check-interface.sh templates/vendor-sync.sh tests/fixtures/planted-secrets.sh)
 shellcheck "${scripts[@]}"
 shfmt -d -i 2 -ci "${scripts[@]}"
 
@@ -97,6 +97,13 @@ echo "== ci.sh's help, and every doc that lists the harness, agree with its disp
 # On its first run it found the help printing a fixed line range, `--repo` unmentioned and
 # exit 1 unlisted
 ./check-sh.sh -n ci.sh -d README.md -m references/ops.md -m SKILL.md ci.sh
+
+echo "== every document keeps the house rules a script can decide"
+# The prose rules, vendored from the create-readme skill: a paragraph on one line, no full
+# stop closing one, plain quotation marks. It proves each of its own rules able to fail on
+# every run, so nothing here has to. The fixtures under tests/ are left out: they are
+# broken on purpose
+./check-prose.sh README.md SKILL.md CHANGELOG.md references/*.md
 
 echo "== this repository passes the skill gate every skill repository runs"
 # check-skill.sh is vendored from the skill-authoring skill
