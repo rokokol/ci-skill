@@ -6,6 +6,7 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ### Added
 
+- `templates/github/workflows/vendor-sync-macos.yml`, a variant of `vendor-sync.yml` for a repository that also carries `macos.yml`. `verify-macos` reaches it the same way `verify` reaches `build.yml`: a plain job under the same `needs: bump` / `if: needs.bump.outputs.moved == '1'` guard, no conditional logic in `build.yml` itself. A single shared template cannot name `macos.yml` unconditionally — `uses:` to a file that does not exist refuses the run before any `if:` is read, measured against a live workflow — so a repository with no `macos.yml` keeps taking `vendor-sync.yml`
 - `check-comments.allow` at the root excuses the rejected parse on `templates/check-pins.sh`, where the alternation is built with a bare `|` inside a `${x:+word}`. The line is correct bash and tree-sitter's grammar refuses it, which is upstream [tree-sitter-bash#267](https://github.com/tree-sitter/tree-sitter-bash/issues/267); every spelling the grammar does accept either changes the value or moves the bar into a variable declared away from the line that uses it
 
 ## 2026-09-18
