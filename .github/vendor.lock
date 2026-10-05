@@ -4,6 +4,6 @@
 # works: references/bump-cascade.md in https://github.com/rokokol/ci-skill
 vendor-sync.sh rokokol/ci-skill templates/vendor-sync.sh cfa9fb1ae44f73117feed5fa01811e84bae553a0 176a58470c142a98cb6434a889b3e98fea266ad3
 .github/workflows/vendor-sync.yml rokokol/ci-skill templates/github/workflows/vendor-sync.yml d55020ab3ca780ea6299336d923b8a3fcb8f491d a5bde77f98d55a43b2c993f4c96a952e0b68010d manual
-check-sh.sh rokokol/bash-best-practices-skill check-sh.sh d625a2d6d0472065c2e18377d4cefccf6141b082 f5cd917187c62224538ae8efdeb708f806be90f6
-check-skill.sh rokokol/skill-authoring-skill check-skill.sh b779d5c14e157337f432f2a23cdc4b52c9aed806 1e9b3cbe3e5733237de315943ceb72efd63375c6
+check-sh.sh rokokol/bash-best-practices-skill check-sh.sh a4f5f26191417564d0ebe122bf652dd7e3f74b50 37cb4b54dc245288c711b9665c9b4aedc496b1ce
+check-skill.sh rokokol/skill-authoring-skill check-skill.sh c75b0cf40ac90a9dcb5f335c6349cd15470f27b3 83152392d798af1860d2b3fcf11438b4b8d0e4ff
 check-prose.sh rokokol/create-readme-skill check-prose.sh 66820c8be3477c218dabdfcbb5e41e085de40e57 3054ffa2de0990be2164494d734f34f17eda5e2b
