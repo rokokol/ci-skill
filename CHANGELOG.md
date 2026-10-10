@@ -2,6 +2,12 @@
 
 Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The rule lives in the [versioning](https://github.com/rokokol/versioning-skill) skill, which owns what has no version
 
+## 2026-10-11
+
+### Added
+
+- `templates/github/workflows/flakehub-publish.yml`: publish every `v*` tag to FlakeHub, and an existing tag by name through the dispatch input. A tag is the only event that may release, because the workflow token cannot mint one; `workflow_dispatch` exists so a previously tagged release can be published without retagging. The flake name comes from the repository itself, so the template has no repo-specific part and every flake repository takes this same copy through the cascade, with `--manual`, since the release token cannot push a workflow file. Consumers: claude-account, ddlc.nvim, ddlc-palette and the rest of the `rokokol/*` flake family
+
 ## 2026-09-23
 
 ### Added

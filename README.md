@@ -92,6 +92,7 @@ github/workflows/
   bump-cascade.yml     weekly bump -> verify by calling build.yml -> land on green
   detector.yml         the reusable world-facing job
   detector-target.yml  the thin wrapper that gives that job its own badge
+  flakehub-publish.yml publish v* tags to FlakeHub, and an existing tag by dispatch input
   vendor-sync.yml      weekly refresh of vendored files -> verify by calling build.yml -> land on green
 no-secrets.sh          refuse ignored paths and secret values at the tracked-file boundary
 check-pins.sh          the pin guard: no tool from a registry, proven per shape on every run
@@ -99,7 +100,7 @@ check-interface.sh     hold documents to the interface a foreign tool declares, 
 vendor-sync.sh         keep vendored copies byte-equal to their source, and refuse an edit in place
 ```
 
-`no-secrets.sh` rejects tracked paths matched by `.gitignore`, including paths admitted with `git add -f`, before scanning tracked contents for secret shapes; `.gitignore` itself remains ordinary repository content. `EXAMPLE` markers sit on everything repo-specific — the bump command, what the detector probes, the secret shapes only your repo can leak. The other checkers have no such part, and another repository takes them through the [vendoring cascade](references/bump-cascade.md#vendored-files) rather than by hand. What `check-pins.sh` catches and how it proves itself is in [pinning.md](references/pinning.md#the-guard-is-one-file-not-a-grep-every-repository-re-types), and the same for `check-interface.sh` in [checks.md](references/checks.md#check-interfacesh--documents-held-to-the-tool-they-describe)
+`no-secrets.sh` rejects tracked paths matched by `.gitignore`, including paths admitted with `git add -f`, before scanning tracked contents for secret shapes; `.gitignore` itself remains ordinary repository content. `EXAMPLE` markers sit on everything repo-specific — the bump command, what the detector probes, the secret shapes only your repo can leak. `flakehub-publish.yml` has none: the flake name comes from the repository itself, so every flake repository takes this same copy through the [vendoring cascade](references/bump-cascade.md#vendored-files), refreshed only with `--manual`, since the release token cannot push a workflow file. The other checkers also have no repo-specific part, and another repository takes them through the cascade rather than by hand. What `check-pins.sh` catches and how it proves itself is in [pinning.md](references/pinning.md#the-guard-is-one-file-not-a-grep-every-repository-re-types), and the same for `check-interface.sh` in [checks.md](references/checks.md#check-interfacesh--documents-held-to-the-tool-they-describe)
 
 > [!IMPORTANT]
 > Copying the secret gate proves nothing. The mechanism travels, the knowledge does not — a copy is worth running only once it has been falsified **in its own repository**: break what it watches, see red, put it back
