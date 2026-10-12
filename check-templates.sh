@@ -188,8 +188,13 @@ base="file://$vs"
 vsync() { (cd "$down" && ./vendor-sync.sh "$@"); }
 lock="$down/.github/vendor.lock"
 
-vsync add -u "$base" tool.sh owner/src tool.sh >/dev/null ||
+GIT_TRACE2_EVENT="$work/vendor-trace.json" vsync add -u "$base" tool.sh owner/src tool.sh >/dev/null ||
   fail "vendor-sync add could not take a file from its source"
+# A detached maintenance process can hold objects/maintenance.lock after fetch returns
+[ -s "$work/vendor-trace.json" ] || fail "Git produced no trace for the temporary repository"
+if grep -q '"name":"maintenance"' "$work/vendor-trace.json"; then
+  fail "vendor-sync started automatic maintenance in its temporary repository"
+fi
 vsync add -u "$base" data/ owner/src data/ >/dev/null ||
   fail "vendor-sync add could not take a directory from its source"
 cmp -s "$up/tool.sh" "$down/tool.sh" || fail "add left tool.sh different from its source"
