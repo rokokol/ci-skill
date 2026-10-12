@@ -106,6 +106,9 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 src="$tmp/src.git"
 git init -q --bare "$src"
+# This repository lives only for this run, so background maintenance can race with removal
+git -C "$src" config gc.auto 0
+git -C "$src" config maintenance.auto false
 : >"$tmp/fetched"
 
 # fetch OWNER/REPO -> sets fetched_sha to the commit of its HEAD, fetching each repository
