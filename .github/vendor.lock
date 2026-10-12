@@ -2,7 +2,7 @@
 # vendor-sync.sh, one per line: LOCAL OWNER/REPO PATH COMMIT BLOB [manual]. Never edit a
 # copy in place: change it at its source and let the weekly cascade bring it back. How it
 # works: references/bump-cascade.md in https://github.com/rokokol/ci-skill
-vendor-sync.sh rokokol/ci-skill templates/vendor-sync.sh 17967a77076f78762de460a8a4f7adfc3c3456f7 4c2644eeb337c5d0aeab07f39abce7a92047968f
+vendor-sync.sh rokokol/ci-skill templates/vendor-sync.sh 87b5d57bbba23b977533b06087a1b55342762051 1095262478484520267758a24b7ea9e057ca5204
 .github/workflows/vendor-sync.yml rokokol/ci-skill templates/github/workflows/vendor-sync.yml d55020ab3ca780ea6299336d923b8a3fcb8f491d a5bde77f98d55a43b2c993f4c96a952e0b68010d manual
 check-sh.sh rokokol/bash-best-practices-skill check-sh.sh a4f5f26191417564d0ebe122bf652dd7e3f74b50 37cb4b54dc245288c711b9665c9b4aedc496b1ce
 check-skill.sh rokokol/skill-authoring-skill check-skill.sh a7bdbf30eb8b16738b10b07b56016ad8930f136f cf071f3eb7e5641a20ff1e44fd7acc05440bc44c

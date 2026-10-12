@@ -48,6 +48,11 @@ update keeps URL pins unchanged. add-url also replaces an existing URL pin and r
 its new blob; it refuses a Git line or a copy edited locally. Use --manual to replace a
 manual pin. No command discovers a newer URL or SHA256 automatically
 
+If update changes a copy, it runs .github/vendor-sync-post.sh when that file exists.
+The hook must be executable. It runs from the repository root after the lock is written.
+Use it to rebuild derived files before the cascade commits. A failed hook fails update.
+An unchanged update and sync do not run the hook
+
 Exit 1 with `vendor-sync: <what>` on a finding or a failed fetch, 2 on a usage error
 EOF
 }
@@ -375,6 +380,11 @@ update() {
     printf '%s %s %s %s %s%s\n' "$l" "$r" "$p" "$fetched_sha" "$blob" "${m:+ $m}" >>"$tmp/lock"
   done 3<"$lock"
   cmp -s "$tmp/lock" "$lock" || cp "$tmp/lock" "$lock"
+  if ((moved > 0)) && [[ -e .github/vendor-sync-post.sh ]]; then
+    [[ -f .github/vendor-sync-post.sh && -x .github/vendor-sync-post.sh ]] ||
+      fail ".github/vendor-sync-post.sh must be an executable file"
+    ./.github/vendor-sync-post.sh || fail "post-update hook failed"
+  fi
   echo "vendor-sync: $n cop$( ((n == 1)) && echo y || echo ies) checked against their source, $moved taken anew$( ((behind == 0)) || echo ", $behind manual behind")"
 }
 
