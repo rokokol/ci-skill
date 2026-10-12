@@ -213,6 +213,21 @@ grep -q "^tool.sh owner/src tool.sh $(git -C "$up" rev-parse HEAD) " "$lock" ||
   fail "the lock does not record the commit tool.sh now comes from:"$'\n'"$(cat "$lock")"
 [ -x "$down/tool.sh" ] || fail "update dropped the executable bit"
 
+echo "== update rebuilds derived files only when a copy changes"
+printf '#!/bin/sh\ngit diff --quiet -- tool.sh && exit 1\n./vendor-sync.sh check || exit 1\nprintf "rebuilt\\n" >> generated.txt\n' >"$down/.github/vendor-sync-post.sh"
+chmod +x "$down/.github/vendor-sync-post.sh"
+printf '#!/bin/sh\necho hook\n' >"$up/tool.sh"
+git -C "$up" commit -qam hook
+vsync update -u "$base" >/dev/null || fail "update could not run its post-update hook"
+grep -qx rebuilt "$down/generated.txt" || fail "post-update hook did not generate its output"
+vsync update -u "$base" >/dev/null || fail "unchanged update failed with a hook"
+[ "$(wc -l <"$down/generated.txt" | tr -d ' ')" = 1 ] || fail "unchanged update ran the post-update hook"
+printf '#!/bin/sh\nexit 7\n' >"$down/.github/vendor-sync-post.sh"
+printf '#!/bin/sh\necho two\n' >"$up/tool.sh"
+git -C "$up" commit -qam "hook failure"
+if vsync update -u "$base" >/dev/null 2>&1; then fail "update accepted a failed post-update hook"; fi
+rm -f "$down/.github/vendor-sync-post.sh"
+
 echo "== sync restores Git pins without advancing to the source HEAD"
 printf '#!/bin/sh\necho later\n' >"$up/tool.sh"
 git -C "$up" commit -qam later

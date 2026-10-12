@@ -6,6 +6,7 @@ Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), d
 
 ### Added
 
+- `vendor-sync.sh update` runs an optional post-update hook after changed copies and their lock are written, so derived files enter the same cascade commit
 - `vendor-sync.sh add-url` records file or archive URLs with SHA-256 pins. It verifies downloads before replacement and refuses archive links and unsafe paths
 - `vendor-sync.sh sync` restores copies from recorded Git commits and URL pins without advancing sources or changing the lock
 
