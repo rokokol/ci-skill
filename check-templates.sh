@@ -213,6 +213,113 @@ grep -q "^tool.sh owner/src tool.sh $(git -C "$up" rev-parse HEAD) " "$lock" ||
   fail "the lock does not record the commit tool.sh now comes from:"$'\n'"$(cat "$lock")"
 [ -x "$down/tool.sh" ] || fail "update dropped the executable bit"
 
+echo "== sync restores Git pins without advancing to the source HEAD"
+printf '#!/bin/sh\necho later\n' >"$up/tool.sh"
+git -C "$up" commit -qam later
+printf 'local edit\n' >"$down/tool.sh"
+cp "$lock" "$work/sync.lock.before"
+vsync sync -u "$base" >/dev/null || fail "sync could not restore a Git pin over a local edit"
+cmp -s "$lock" "$work/sync.lock.before" || fail "sync changed the lock"
+grep -qx 'echo two' "$down/tool.sh" || fail "sync followed HEAD instead of the recorded commit"
+[ -x "$down/tool.sh" ] || fail "sync dropped the executable bit"
+rm -f "$down/tool.sh"
+vsync sync -u "$base" >/dev/null || fail "sync could not restore a missing Git copy"
+grep -qx 'echo two' "$down/tool.sh" || fail "sync restored a missing copy from HEAD"
+printf '#!/bin/sh\necho two\n' >"$up/tool.sh"
+git -C "$up" commit -qam restored
+
+echo "== URL pins verify bytes before replacement and reject unsafe archives"
+mkdir -p "$work/downloads"
+printf 'pinned bytes\n' >"$work/downloads/file.txt"
+url="file://$work/downloads/file.txt"
+sha=$(python3 -c 'import hashlib, sys; print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())' "$work/downloads/file.txt")
+vsync add-url pinned.txt "$url" "$sha" >/dev/null || fail "add-url could not take a pinned file"
+cmp -s "$work/downloads/file.txt" "$down/pinned.txt" || fail "URL file differs from the verified download"
+printf 'edit\n' >"$down/pinned.txt"
+vsync sync -u "$base" >/dev/null || fail "sync could not restore a URL pin"
+cmp -s "$work/downloads/file.txt" "$down/pinned.txt" || fail "sync left the URL file edited"
+printf 'changed download\n' >"$work/downloads/file.txt"
+if vsync sync -u "$base" >/dev/null 2>&1; then fail "sync accepted a download with a wrong SHA-256"; fi
+grep -qx 'pinned bytes' "$down/pinned.txt" || fail "a hash mismatch replaced the existing URL file"
+printf 'pinned bytes\n' >"$work/downloads/file.txt"
+if vsync add-url bad.txt "$url" nope >/dev/null 2>&1; then fail "add-url accepted an invalid SHA-256"; fi
+[ ! -e "$down/bad.txt" ] || fail "an invalid hash left a destination file"
+wrong_sha=0000000000000000000000000000000000000000000000000000000000000000
+cp "$lock" "$work/hash.lock.before"
+if vsync add-url wrong-hash.txt "$url" "$wrong_sha" >/dev/null 2>&1; then
+  fail "add-url accepted a valid SHA-256 that does not match the downloaded bytes"
+fi
+[ ! -e "$down/wrong-hash.txt" ] || fail "a SHA-256 mismatch left a new destination file"
+cmp -s "$lock" "$work/hash.lock.before" || fail "a SHA-256 mismatch changed the lock"
+printf 'new pin\n' >"$work/downloads/file.txt"
+sha=$(python3 -c 'import hashlib, sys; print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())' "$work/downloads/file.txt")
+vsync add-url pinned.txt "$url" "$sha" >/dev/null || fail "add-url could not replace an existing URL pin"
+grep -qx 'new pin' "$down/pinned.txt" || fail "add-url kept the old bytes after a new pin"
+[ "$(awk '$1 == "pinned.txt" { n++ } END { print n }' "$lock")" = 1 ] || fail "add-url duplicated a URL lock line"
+printf 'edit\n' >"$down/pinned.txt"
+if vsync add-url pinned.txt "$url" "$sha" >/dev/null 2>&1; then fail "add-url overwrote a locally edited URL copy"; fi
+vsync sync -u "$base" >/dev/null || fail "sync could not restore the replacement URL pin"
+python3 - "$work/downloads" <<'PY'
+import io
+import pathlib
+import tarfile
+import zipfile
+import sys
+
+root = pathlib.Path(sys.argv[1])
+with tarfile.open(root / "good.tar.gz", "w:gz") as archive:
+    item = tarfile.TarInfo("nested/run.sh")
+    data = b"#!/bin/sh\necho archive\n"
+    item.size = len(data)
+    item.mode = 0o755
+    archive.addfile(item, io.BytesIO(data))
+with zipfile.ZipFile(root / "good.zip", "w") as archive:
+    archive.writestr("nested/data.txt", "zip bytes\n")
+with tarfile.open(root / "bad.tar", "w") as archive:
+    item = tarfile.TarInfo("../escape")
+    item.size = 1
+    archive.addfile(item, io.BytesIO(b"x"))
+with tarfile.open(root / "link.tar", "w") as archive:
+    item = tarfile.TarInfo("link")
+    item.type = tarfile.SYMTYPE
+    item.linkname = "../escape"
+    archive.addfile(item)
+with tarfile.open(root / "hardlink.tar", "w") as archive:
+    item = tarfile.TarInfo("link")
+    item.type = tarfile.LNKTYPE
+    item.linkname = "../escape"
+    archive.addfile(item)
+with zipfile.ZipFile(root / "bad.zip", "w") as archive:
+    archive.writestr("../escape", "x")
+with zipfile.ZipFile(root / "link.zip", "w") as archive:
+    item = zipfile.ZipInfo("link")
+    item.create_system = 3
+    item.external_attr = 0o120777 << 16
+    archive.writestr(item, "../escape")
+PY
+for name in good.tar.gz good.zip; do
+  sha=$(python3 -c 'import hashlib, sys; print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())' "$work/downloads/$name")
+  vsync add-url "$name/" "file://$work/downloads/$name" "$sha" >/dev/null || fail "add-url could not extract $name"
+done
+[ -x "$down/good.tar.gz/nested/run.sh" ] || fail "archive extraction lost an executable file"
+grep -qx 'zip bytes' "$down/good.zip/nested/data.txt" || fail "ZIP extraction lost its data"
+for name in bad.tar link.tar hardlink.tar bad.zip link.zip; do
+  sha=$(python3 -c 'import hashlib, sys; print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())' "$work/downloads/$name")
+  if vsync add-url "$name/" "file://$work/downloads/$name" "$sha" >/dev/null 2>&1; then fail "add-url accepted unsafe archive $name"; fi
+  [ ! -e "$down/$name" ] || fail "unsafe archive left its destination"
+done
+[ ! -e "$down/escape" ] || fail "an archive wrote outside its destination"
+vsync check >/dev/null || fail "check rejected URL pins after extraction"
+cp "$lock" "$work/url.lock.before"
+printf 'changed archive\n' >"$work/downloads/good.tar.gz"
+if vsync sync -u "$base" >/dev/null 2>&1; then fail "sync accepted a changed archive"; fi
+grep -qx 'echo archive' "$down/good.tar.gz/nested/run.sh" || fail "failed archive verification damaged the existing directory"
+cmp -s "$lock" "$work/url.lock.before" || fail "failed archive verification changed the lock"
+git -C "$down" add -A
+git -C "$down" commit -qm "URL pins"
+awk '$2 != "url"' "$lock" >"$work/git-only.lock"
+cp "$work/git-only.lock" "$lock"
+
 # Nothing moved, so nothing changes — not even the lock
 cp "$lock" "$work/lock.before"
 vsync update -u "$base" >/dev/null || fail "update failed with nothing to do"
@@ -261,6 +368,9 @@ vsync update -u "$base" >/dev/null || fail "update failed beside a manual line"
 grep -qx 'on: push' "$down/.github/workflows/flow.yml" || fail "update without --manual touched a manual line"
 vsync update --manual -u "$base" >/dev/null || fail "update --manual failed"
 grep -qxF 'on: [push]' "$down/.github/workflows/flow.yml" || fail "update --manual did not bring a manual line"
+printf 'on: workflow_dispatch\n' >"$down/.github/workflows/flow.yml"
+vsync sync --manual -u "$base" >/dev/null || fail "sync --manual could not restore a workflow pin"
+grep -qxF 'on: [push]' "$down/.github/workflows/flow.yml" || fail "sync --manual did not restore the recorded workflow"
 
 # --manual refreshes the manual lines and nothing else: a person running it by hand must not
 # land every other copy's new content without the verify step the weekly run gives it

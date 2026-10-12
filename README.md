@@ -102,6 +102,8 @@ vendor-sync.sh         keep vendored copies byte-equal to their source, and refu
 
 `no-secrets.sh` rejects tracked paths matched by `.gitignore`, including paths admitted with `git add -f`, before scanning tracked contents for secret shapes; `.gitignore` itself remains ordinary repository content. `EXAMPLE` markers sit on everything repo-specific — the bump command, what the detector probes, the secret shapes only your repo can leak. `flakehub-publish.yml` has none: the flake name comes from the repository itself, so every flake repository takes this same copy through the [vendoring cascade](references/bump-cascade.md#vendored-files), refreshed only with `--manual`, since the cascade token cannot push a workflow file. The other checkers also have no repo-specific part, and another repository takes them through the cascade rather than by hand. What `check-pins.sh` catches and how it proves itself is in [pinning.md](references/pinning.md#the-guard-is-one-file-not-a-grep-every-repository-re-types), and the same for `check-interface.sh` in [checks.md](references/checks.md#check-interfacesh--documents-held-to-the-tool-they-describe)
 
+`vendor-sync.sh` also supports URL pins for files and archives, and restoration from locked Git commits. Its help describes the commands and dependencies
+
 > [!IMPORTANT]
 > Copying the secret gate proves nothing. The mechanism travels, the knowledge does not — a copy is worth running only once it has been falsified **in its own repository**: break what it watches, see red, put it back
 

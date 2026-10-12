@@ -20,6 +20,9 @@
         default = pkgs.mkShell {
           packages = with pkgs; [
             actionlint
+            curl
+            git
+            python3
             # The vendored check-sh.sh is moving to reading a script as a tree, out of
             # `shfmt --to-json`, with jq flattening that tree into rows. It arrives before
             # the checker that needs it, so the cascade does not deliver a red run
