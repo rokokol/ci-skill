@@ -7,7 +7,7 @@
 A push to a repository that has CI is a claim — "this is green" — and the claim is settled by the runs, not by the push returning. In order:
 
 1. **Run the gate locally first**, with the command the workflow runs, under the pinned toolchain the workflow uses (`nix develop -c ./check.sh`, `npm ci && npm test`, whatever `build.yml` says). Anything that goes red here would have gone red there twenty minutes later; a push that skips this step is a slower way to run the check
-2. **Push, then `ci.sh watch`.** It follows every run of the pushed HEAD — gates and detectors alike — and exits nonzero if any failed. Do not go on to the next task while it waits, and do not report "pushed" as if it were "green"
+2. **Push, then `ci.sh watch`.** It follows every run of the pushed HEAD — gates and detectors alike — and exits nonzero if any failed. Do not go on to the next task while it waits, and do not report "pushed" as if it were "green". A watch started in the first seconds after the push can find no run of the new HEAD yet and return at once with nothing to report: an empty verdict is not a green one. Start it once `gh run list --commit "$(git rev-parse HEAD)"` lists the runs, or read empty output as "not started"
 3. **On red, `ci.sh failed`** names the failing steps and shows the log around the real error. Fix, run the gate locally again, push again. The one exception is a detector that reddened on an external cause — a mirror down, a `:latest` image that moved — which is exactly what the [gate/detector split](badges.md) is for: name the cause, and only then `ci.sh rerun`
 4. **Report the verdict**: which workflows ran, what each concluded, and the fix if there was one. "Pushed" is not a result
 
