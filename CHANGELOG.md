@@ -2,6 +2,12 @@
 
 Kept in the shape of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), dated rather than numbered, and with no `Unreleased` section — a skill is read at whatever revision you have checked out, so whatever is on the default branch is what every reader already has, and a section for work that has landed but not shipped would never close. The rule lives in the [versioning](https://github.com/rokokol/versioning-skill) skill, which owns what has no version
 
+## 2026-10-24
+
+### Fixed
+
+- **`ci.sh watch`** no longer treats an empty run list as a verdict: a push races GitHub's listing of its own runs, so an empty answer is now retried every 15 seconds, and the command gives up with an error after four checks in a row instead of failing at once as if the commit had nothing to check
+
 ## 2026-10-20
 
 ### Added

@@ -63,6 +63,20 @@ set -- "${args[@]+"${args[@]}"}"
 
 case "${1:-}${2:+ $2}" in
   "run list")
+    if [[ -n "${GH_STUB_WATCH_CALLS:-}" ]]; then
+      calls=0
+      [[ ! -f "$GH_STUB_WATCH_CALLS" ]] || read -r calls <"$GH_STUB_WATCH_CALLS"
+      calls=$((calls + 1))
+      printf '%s\n' "$calls" >"$GH_STUB_WATCH_CALLS"
+      if [[ "$calls" == 1 && -z "${GH_STUB_EMPTY_ALWAYS:-}" ]]; then
+        printf '[]\n'
+        exit 0
+      fi
+    fi
+    if [[ -n "${GH_STUB_EMPTY_ALWAYS:-}" ]]; then
+      printf '[]\n'
+      exit 0
+    fi
     emit "$dir/runs.json"
     ;;
   "run view")

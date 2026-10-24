@@ -70,6 +70,8 @@ echo "== ci.sh reads a run that was cancelled, and the log of a job that was not
 # so a check cannot pass because the fake quietly returned nothing.
 mkdir -p "$work/bin"
 ln -sf "$HERE/tests/fixtures/gh-stub" "$work/bin/gh"
+printf '#!/bin/sh\nexit 0\n' >"$work/bin/sleep"
+chmod +x "$work/bin/sleep"
 stub() { (PATH="$work/bin:$PATH" GH_STUB_DIR="$HERE/tests/fixtures/gh" ./ci.sh "$@" 2>&1); }
 out=$(stub failed 34161681702) ||
   fail "ci.sh failed exited nonzero on a cancelled run:"$'\n'"$out"
@@ -85,6 +87,21 @@ out=$(stub failed 34245254549) ||
   fail "ci.sh failed exited nonzero on a run where everything passed:"$'\n'"$out"
 grep -q 'nothing went wrong' <<<"$out" ||
   fail "ci.sh failed printed nothing for a run where nothing went wrong, which reads exactly like a reader that cannot see:"$'\n'"$out"
+
+watch_calls="$work/watch-calls"
+watch_status=0
+out=$(PATH="$work/bin:$PATH" GH_STUB_DIR="$HERE/tests/fixtures/gh" GH_STUB_WATCH_CALLS="$watch_calls" ./ci.sh watch 2>&1) || watch_status=$?
+[ "$(<"$watch_calls")" -ge 2 ] || fail "ci.sh watch did not poll again after an empty result"
+[ "$watch_status" -eq 1 ] || fail "ci.sh watch did not return the conclusion of the runs that appeared:"$'\n'"$out"
+grep -q 'ci: success' <<<"$out" || fail "ci.sh watch did not report the run that appeared after an empty result:"$'\n'"$out"
+
+limit_calls="$work/limit-calls"
+watch_status=0
+out=$(PATH="$work/bin:$PATH" GH_STUB_DIR="$HERE/tests/fixtures/gh" GH_STUB_EMPTY_ALWAYS=1 \
+  GH_STUB_WATCH_CALLS="$limit_calls" timeout 10s ./ci.sh watch 2>&1) || watch_status=$?
+[ "$watch_status" -eq 2 ] || fail "ci.sh watch did not stop after four empty checks (exit $watch_status):"$'\n'"$out"
+[ "$(<"$limit_calls")" -eq 4 ] || fail "ci.sh watch checked $(<"$limit_calls") times before giving up, not 4"
+grep -q 'after 4 checks' <<<"$out" || fail "ci.sh watch gave up without saying why:"$'\n'"$out"
 
 echo "== ci.sh's help, and every doc that lists the harness, agree with its dispatch"
 # ci.sh's own dispatch is the list. README restates it for readers, and a restated list

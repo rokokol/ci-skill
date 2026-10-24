@@ -9,7 +9,8 @@ at another repository, defaulting to the one the current directory belongs to.
 
   ci.sh status              latest run of every workflow — the badge row, in a terminal
   ci.sh runs [N]            the N most recent runs (default 10)
-  ci.sh watch               follow the runs of the current HEAD until all conclude
+  ci.sh watch               follow the runs of the current HEAD until all conclude;
+                            give up with an error after 4 checks that find no runs
   ci.sh failed [RUN_ID]     the steps of a run that went wrong — failed, cancelled or
                             timed out alike — then the log lines around the actual
                             error, not the cleanup noise a raw log tail shows (the
@@ -89,10 +90,21 @@ case "$cmd" in
     # Follow every run of the current HEAD until all conclude; nonzero if any failed.
     # Detectors and gates alike — what you pushed is what gets watched
     sha=$(git rev-parse HEAD 2>/dev/null) || die "watch needs to run inside the checkout"
+    checks=0
     while true; do
       state=$(gh run list "${REPO_ARGS[@]+"${REPO_ARGS[@]}"}" --commit "$sha" \
         --json workflowName,status,conclusion)
-      [[ "$state" != "[]" ]] || die "no runs for $sha yet — give the push a few seconds"
+      if [[ "$state" == "[]" ]]; then
+        # An empty answer right after a push is GitHub not having listed the run yet,
+        # not a commit with nothing to check; it is retried, and after four checks in a
+        # row it is a real error rather than a reason to wait forever
+        checks=$((checks + 1))
+        ((checks < 4)) ||
+          die "no runs for $sha after 4 checks — is the push on this repository?"
+        printf 'no runs for %s yet; checking again in 15s...\n' "${sha:0:7}"
+        sleep 15
+        continue
+      fi
       pending=$(jq -r '[.[] | select(.status != "completed")] | length' <<<"$state")
       if [[ "$pending" == 0 ]]; then
         jq -r '.[] | "\(.workflowName): \(.conclusion)"' <<<"$state" | sort
